@@ -12,7 +12,7 @@ namespace LolAutoAccept.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "14.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "15.1.0.0")]
     internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
         
         private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
@@ -38,12 +38,24 @@ namespace LolAutoAccept.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("True")]
-        public bool AutoPick {
+        public bool AutoLock {
             get {
-                return ((bool)(this["AutoPick"]));
+                return ((bool)(this["AutoLock"]));
             }
             set {
-                this["AutoPick"] = value;
+                this["AutoLock"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool AlwaysMonitor {
+            get {
+                return ((bool)(this["AlwaysMonitor"]));
+            }
+            set {
+                this["AlwaysMonitor"] = value;
             }
         }
     }

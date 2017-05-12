@@ -5,7 +5,10 @@
     <Setting Name="AutoAccept" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
-    <Setting Name="AutoPick" Type="System.Boolean" Scope="User">
+    <Setting Name="AutoLock" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="AlwaysMonitor" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
   </Settings>
