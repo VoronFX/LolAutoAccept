@@ -65,6 +65,7 @@
     <Compile Include="PatterCaptureForm.Designer.cs">
       <DependentUpon>PatterCaptureForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Patterns.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="ProgramContextMenu.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
