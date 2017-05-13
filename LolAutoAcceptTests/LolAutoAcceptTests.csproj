@@ -120,9 +120,9 @@
     <EmbeddedResource Include="TestSamples\MainScreenTest2_1600x900.png" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="TestSamples\BlindPickTest_1024x576.png" />
-    <EmbeddedResource Include="TestSamples\BlindPickTest_1280x720.png" />
-    <EmbeddedResource Include="TestSamples\BlindPickTest_1600x900.png" />
+    <EmbeddedResource Include="TestSamples\ChampionSelectBlindPickTest_1024x576.png" />
+    <EmbeddedResource Include="TestSamples\ChampionSelectBlindPickTest_1280x720.png" />
+    <EmbeddedResource Include="TestSamples\ChampionSelectBlindPickTest_1600x900.png" />
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
