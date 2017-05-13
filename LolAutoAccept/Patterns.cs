@@ -1,13 +1,21 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Linq;
 using System.Reflection;
 
 namespace LolAutoAccept
 {
 	public class Patterns
 	{
+		public static Size[] SupportedResolutions { get; }
+			= { new Size(1024, 576), new Size(1280, 720), new Size(1600, 900) };
+
+		public static Size NativeResolution { get; }
+			= new Size(1280, 720);
+
 		public class MatchPoint
 		{
 			public readonly Color Color;
@@ -21,6 +29,12 @@ namespace LolAutoAccept
 				this.Y = y;
 			}
 		}
+
+		private Rectangle[] BanRects { get; }
+		private Rectangle[] SummonerNameRects { get; }
+		private Rectangle[] AllieSummonerPickRects { get; }
+		private Rectangle[] EnemySummonerPickRects { get; }
+
 		public Lazy<MatchPoint[]> AcceptMatchButtonSample { get; }
 		public Lazy<MatchPoint[]> AcceptMatchButtonHoverSample { get; }
 		public Lazy<MatchPoint[]> ChampionSelectSample { get; }
@@ -30,15 +44,15 @@ namespace LolAutoAccept
 		public Lazy<MatchPoint[]> ChampionSelectLockButtonSample { get; }
 		public Lazy<MatchPoint[]> ChampionSelectLockButtonHoverSample { get; }
 
-		public int TargetWidth { get; }
-		public int TargetHeight { get; }
+		public Size Resolution { get; }
 		public InterpolationMode InterpolationMode { get; }
 
-		public Patterns(int targetWidth, int targetHeight,
-			InterpolationMode interpolationMode = InterpolationMode.NearestNeighbor)
+		public Patterns(Size resolution, InterpolationMode interpolationMode = InterpolationMode.NearestNeighbor)
 		{
-			TargetWidth = targetWidth;
-			TargetHeight = targetHeight;
+			if (!SupportedResolutions.Contains(resolution))
+				throw new ArgumentException($"Resoultion {resolution} is not supported");
+
+			Resolution = resolution;
 			InterpolationMode = interpolationMode;
 
 			var samplesNamespace = $"{nameof(LolAutoAccept)}.Samples.";
@@ -58,6 +72,15 @@ namespace LolAutoAccept
 				PrepareSample(samplesNamespace + "ChampionSelectLockButton.png"), false);
 			ChampionSelectLockButtonHoverSample = new Lazy<MatchPoint[]>(() =>
 				PrepareSample(samplesNamespace + "ChampionSelectLockButtonHover.png"), false);
+
+			BanRects = Enumerable.Range(0, 6)
+				.Select(i => Scale(new Rectangle(200 + 38 * i + (i < 3 ? 0 : 661), 10, 30, 30))).ToArray();
+			SummonerNameRects = Enumerable.Range(0, 4)
+				.Select(i => Scale(new Rectangle(128, 126 + i * 80, 6, 22))).ToArray();
+			AllieSummonerPickRects = Enumerable.Range(0, 4)
+				.Select(i => Scale(new Rectangle(45, 104 + i * 80, 62, 62))).ToArray();
+			EnemySummonerPickRects = Enumerable.Range(0, 4)
+				.Select(i => Scale(new Rectangle(1172, 104 + i * 80, 62, 62))).ToArray();
 		}
 
 		private MatchPoint[] PrepareSample(string resourceName)
@@ -65,7 +88,7 @@ namespace LolAutoAccept
 			var checkPoints = new List<MatchPoint>();
 			using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName))
 			using (var bitmap = new Bitmap(stream))
-			using (var scaledBitmap = Scale(bitmap, TargetWidth, TargetHeight))
+			using (var scaledBitmap = Scale(bitmap, Resolution))
 			using (var lockBitmap = new LockBitmap.LockBitmap(scaledBitmap))
 			{
 				for (int x = 0; x < lockBitmap.Width; x++)
@@ -81,15 +104,26 @@ namespace LolAutoAccept
 			}
 		}
 
-		private Bitmap Scale(Bitmap source, int targetWidth, int targetHeight)
+		private Rectangle Scale(Rectangle rectangle)
 		{
-			if (source.Width == targetWidth && source.Height == targetHeight)
+			if (Resolution == NativeResolution)
+				return rectangle;
+
+			var xK = Resolution.Width / (double) NativeResolution.Width;
+			var yK = Resolution.Height / (double) NativeResolution.Height;
+			return new Rectangle((int) (rectangle.X * xK), (int) (rectangle.Y * yK),
+				(int) (rectangle.Width * xK), (int) (rectangle.Height * yK));
+		}
+
+		private Bitmap Scale(Bitmap source, Size targetSize)
+		{
+			if (source.Width == targetSize.Width && source.Height == targetSize.Height)
 				return source;
-			var bitmap = new Bitmap(targetWidth, targetHeight);
+			var bitmap = new Bitmap(targetSize.Width, targetSize.Height);
 			using (var g = Graphics.FromImage(bitmap))
 			{
 				g.InterpolationMode = InterpolationMode;
-				g.DrawImage(source, 0, 0, bitmap.Width, bitmap.Height);
+				g.DrawImage(source, 0, 0, Resolution.Width, bitmap.Height);
 				return bitmap;
 			}
 		}
@@ -133,15 +167,17 @@ namespace LolAutoAccept
 				//		Math.Abs(targetPixel.G - pixel.Color.G)),
 				//		Math.Abs(targetPixel.B - pixel.Color.B));
 
-
+				if (diff > diffTreshold)
+					return false;
 			}
 			//Console.WriteLine($"colordiff:{(double)colordiff / (sample.Length * 255)} threshold: {threshold} colorTreshold: {colorTreshold} colordiff: {colordiff}");
-			return diff <= diffTreshold;
+			return true;
 		}
 
 		public enum CompareAlgorithm
 		{
-			Plain, ColorPriority
+			Plain,
+			ColorPriority
 		}
 
 		public static double IsMatchTest(LockBitmap.LockBitmap screenshot, MatchPoint[] sample, CompareAlgorithm algorithm)
@@ -160,7 +196,7 @@ namespace LolAutoAccept
 				colordiff += Math.Max(Math.Max(
 						Math.Abs(targetPixel.R - pixel.Color.R),
 						Math.Abs(targetPixel.G - pixel.Color.G)),
-					Math.Abs(targetPixel.B - pixel.Color.B));
+						Math.Abs(targetPixel.B - pixel.Color.B));
 			}
 
 			switch (algorithm)
@@ -173,5 +209,24 @@ namespace LolAutoAccept
 					throw new ArgumentOutOfRangeException(nameof(algorithm), algorithm, null);
 			}
 		}
+
+		public int DetectOurPickPosition(LockBitmap.LockBitmap screenshot) =>
+			SummonerNameRects.Select(rectangle =>
+			{
+				int match = 0;
+				for (int x = rectangle.Left; x < rectangle.Right; x++)
+					for (int y = rectangle.Top; y < rectangle.Bottom; y++)
+					{
+						var pixel = screenshot.GetPixel(x, y);
+						if (pixel.R < 150 || pixel.G < 100 || pixel.B > 50)
+							continue;
+
+						match += pixel.R + pixel.G - pixel.B;
+					}
+				return match;
+			})
+			.Select((x, i) => (x, i))
+			.Aggregate((int.MinValue, 0), (seed, x) => x.Item1 > seed.Item1 ? x : seed).Item2;
+
 	}
 }

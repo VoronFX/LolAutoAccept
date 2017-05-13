@@ -114,6 +114,11 @@
     <EmbeddedResource Include="TestSamples\AcceptMatchButtonTest_1024x576.png" />
     <EmbeddedResource Include="TestSamples\AcceptMatchButtonTest_1600x900.png" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="TestSamples\MainScreenTest2_1024x576.png" />
+    <EmbeddedResource Include="TestSamples\MainScreenTest2_1280x720.png" />
+    <EmbeddedResource Include="TestSamples\MainScreenTest2_1600x900.png" />
+  </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
       <ItemGroup>

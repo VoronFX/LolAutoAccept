@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -27,6 +28,7 @@ namespace LolAutoAccept.Tests
 			"ChampionSelectLockButtonHoverTest",
 			"ChampionSelectNoButtonTest",
 			"MainScreenTest",
+			"MainScreenTest2",
 			"PlayScreenTest",
 			"CreateCustomScreenTest"
 		};
@@ -77,6 +79,7 @@ namespace LolAutoAccept.Tests
 			var falseTestSamples = new[]
 			{
 				"MainScreenTest",
+				"MainScreenTest2",
 				"PlayScreenTest",
 				"CreateCustomScreenTest",
 				"AcceptMatchButtonTest",
@@ -104,25 +107,18 @@ namespace LolAutoAccept.Tests
 			Func<Patterns, LockBitmap.LockBitmap, bool> testMethod,
 			string[] truePatterns, string[] falsePatterns)
 		{
-			foreach (var res in new[] { (1024, 576), (1280, 720), (1600, 900) })
+			foreach (var res in Patterns.SupportedResolutions)
 			{
-				var patternsClass = new Patterns(res.Item1, res.Item2);
+				var patternsClass = new Patterns(res);
 
 				void Check(IEnumerable<string> patterns, bool expected)
 				{
 					foreach (var pattern in patterns)
 					{
-						var name = $"{pattern}_{res.Item1}x{res.Item2}.png";
+						var name = $"{pattern}_{res.Width}x{res.Height}.png";
 						Console.WriteLine($"Testing {name}");
-						var resName = string.Join(".",
-							nameof(LolAutoAccept) + nameof(Tests),
-							"TestSamples", name);
-						var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resName);
-						if (stream == null)
-							throw new Exception($"Resource {resName} not found");
 
-						Assert.AreEqual(expected, testMethod(patternsClass,
-							new LockBitmap.LockBitmap(new Bitmap(stream))), name);
+						Assert.AreEqual(expected, testMethod(patternsClass, GetSample(name)), name);
 					}
 				}
 
@@ -213,6 +209,7 @@ namespace LolAutoAccept.Tests
 			samplesArray = new[]
 			{
 				"MainScreenTest",
+				"MainScreenTest2",
 				"PlayScreenTest",
 				"CreateCustomScreenTest",
 				"AcceptMatchButtonTest",
@@ -234,62 +231,97 @@ namespace LolAutoAccept.Tests
 					Patterns.IsMatchTest(bitmap, patterns.AcceptMatchButtonHoverSample.Value, alg),
 				new[] { "AcceptMatchButtonHoverTest" }, AllTestSamples.Except(samplesArray).ToArray()));
 
-			return new[] { (1024, 576), (1280, 720), (1600, 900) }.Select(res =>
+			return Patterns.SupportedResolutions.Select(res =>
 			  {
 				  Console.WriteLine();
-				  Console.WriteLine($"imode: {imode}, alg: {alg} res: {res.Item1}x{res.Item2}");
-				  var patternsClass = new Patterns(res.Item1, res.Item2, imode);
+				  Console.WriteLine($"imode: {imode}, alg: {alg} res: {res.Width}x{res.Height}");
+				  var patternsClass = new Patterns(res, imode);
 
 				  IEnumerable<double> Calc(IEnumerable<string> patterns, Func<Patterns, LockBitmap.LockBitmap, double> method)
 					  => patterns.Select(pattern =>
 					  {
-						  var name = $"{pattern}_{res.Item1}x{res.Item2}.png";
-						//Console.WriteLine($"Testing {name}");
-						var resName = string.Join(".",
-							  nameof(LolAutoAccept) + nameof(Tests),
-							  "TestSamples", name);
-						  var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resName);
-						  if (stream == null)
-							  throw new Exception($"Resource {resName} not found");
-
-						  return method(patternsClass,
-							  new LockBitmap.LockBitmap(new Bitmap(stream)));
+						  var name = $"{pattern}_{res.Width}x{res.Height}.png";
+						  //Console.WriteLine($"Testing {name}");
+						  return method(patternsClass, GetSample(name));
 					  });
 
 				  var results = testMethods.Select(tm =>
 				  {
-					  var worstFalse = Calc(tm.falsePatterns, tm.testMethod)
-						  .Aggregate(double.MaxValue, Math.Min);
-
-					  var worstTrue = Calc(tm.truePatterns, tm.testMethod)
-						  .Aggregate(double.MinValue, Math.Max);
+					  var worstFalse = Calc(tm.falsePatterns, tm.testMethod).Min();
+					  var worstTrue = Calc(tm.truePatterns, tm.testMethod).Max();
 
 					  Console.WriteLine($"diff: {worstFalse - worstTrue:P} worstFalse: {worstFalse:P} worstTrue: {worstTrue:P}");
 
 					  return (worstFalse, worstTrue);
 				  }).ToArray();
 
-				  var worstFalseSummary = results
-					  .Select(tm => tm.Item1)
-					  .Aggregate(double.MaxValue, Math.Min);
+				  var worstFalseSummary = results.Select(tm => tm.Item1).Min();
+				  var worstTrueSummary = results.Select(tm => tm.Item2).Max();
+				  var worstFalseAvgSummary = results.Select(tm => tm.Item1).Sum() / results.Length;
+				  var worstTrueAvgSummary = results.Select(tm => tm.Item2).Sum() / results.Length;
 
-				  var worstTrueSummary = results
-					  .Select(tm => tm.Item2)
-					  .Aggregate(double.MinValue, Math.Max);
-
-				  var worstFalseAvgSummary = results.Select(tm => tm.Item1)
-												 .Aggregate(0d, (d, d1) => d + d1) / results.Length;
-
-				  var worstTrueAvgSummary = results.Select(tm => tm.Item2)
-												.Aggregate(0d, (d, d1) => d + d1) / results.Length;
 				  summary.Add(
 					  $"diff: {worstFalseSummary - worstTrueSummary:P} worstFalse: {worstFalseSummary:P} worstTrue: {worstTrueSummary:P}"
 					  + $" diffAvg: {worstFalseAvgSummary - worstTrueAvgSummary:P} worstFalseAvg: {worstFalseAvgSummary:P} worstTrueAvg: {worstTrueAvgSummary:P}"
-					  + $" imode: {imode}, alg: {alg} res: {res.Item1}x{res.Item2}");
+					  + $" imode: {imode}, alg: {alg} res: {res.Width}x{res.Height}");
 
 				  return (worstFalseSummary, worstTrueSummary);
-			  }).Aggregate((double.MaxValue, double.MinValue), 
-			  (x,x2)=> (Math.Min(x.Item1, x2.Item1), Math.Max(x.Item2, x2.Item2)));
+
+			  }).Aggregate((double.MaxValue, double.MinValue),
+			  (x, x2) => (Math.Min(x.Item1, x2.Item1), Math.Max(x.Item2, x2.Item2)));
+		}
+
+		[TestMethod()]
+		public void DetectOurPickPosition()
+		{
+			var patternsClass = new Patterns(Patterns.NativeResolution);
+
+			foreach (var test in new(string sample, int position)[]
+			{
+					("ChampionSelectBanButtonHoverTest_1024x576",0),
+					("ChampionSelectBanButtonHoverTest_1280x720",2),
+					("ChampionSelectBanButtonHoverTest_1600x900",1),
+					("ChampionSelectBanButtonTest_1024x576",0),
+					("ChampionSelectBanButtonTest_1280x720",2),
+					("ChampionSelectBanButtonTest_1600x900",1),
+					("ChampionSelectBanLockButtonDisabledTest_1024x576",0),
+					("ChampionSelectBanLockButtonDisabledTest_1280x720",2),
+					("ChampionSelectBanLockButtonDisabledTest_1600x900",1),
+					("ChampionSelectBanLockButtonDisabledTest2_1024x576",0),
+					("ChampionSelectBanLockButtonDisabledTest2_1280x720",0),
+					("ChampionSelectBanLockButtonDisabledTest2_1600x900",1),
+					("ChampionSelectLockButtonHoverTest_1024x576",0),
+					("ChampionSelectLockButtonHoverTest_1280x720",2),
+					("ChampionSelectLockButtonHoverTest_1600x900",1),
+					("ChampionSelectLockButtonTest_1024x576",0),
+					("ChampionSelectLockButtonTest_1280x720",2),
+					("ChampionSelectLockButtonTest_1600x900",1),
+					("ChampionSelectNoButtonTest_1024x576",0),
+					("ChampionSelectNoButtonTest_1280x720",0),
+					("ChampionSelectNoButtonTest_1600x900",0)
+			})
+			{
+				var name = $"{test.sample}.png";
+				Console.WriteLine($"Testing {name}");
+				var sample = GetSample(name);
+
+				if (patternsClass.Resolution.Width != sample.Width
+					|| patternsClass.Resolution.Height != sample.Height)
+					patternsClass = new Patterns(new Size(sample.Width, sample.Height));
+
+				Assert.AreEqual(test.position, patternsClass.DetectOurPickPosition(sample), name);
+			}
+		}
+
+		private static LockBitmap.LockBitmap GetSample(string name)
+		{
+			var resName = string.Join(".", nameof(LolAutoAccept) + nameof(Tests), "TestSamples", name);
+			var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resName);
+			if (stream == null)
+				throw new Exception($"Resource {resName} not found");
+			var lockBitmap = new LockBitmap.LockBitmap(new Bitmap(stream));
+			lockBitmap.UnlockBits();
+			return lockBitmap;
 		}
 	}
 }
