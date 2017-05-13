@@ -86,7 +86,7 @@ namespace LolAutoAccept
 						using (var bitmap = new Bitmap(i, i))
 						using (var g = Graphics.FromImage(bitmap))
 						{
-							g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+							g.InterpolationMode = InterpolationMode.NearestNeighbor;
 							lock (searchBmp)
 							{
 								g.DrawImage(searchBmp, 0, 0, bitmap.Width, bitmap.Height);
@@ -124,8 +124,9 @@ namespace LolAutoAccept
 							});
 						});
 					});
+					Invoke((Action)(() =>
 					textBox1.Text = string.Join(Environment.NewLine,
-						searchResults.OrderBy(x => x.Item4).Select(x => $"x:{x.x} y:{x.y} size:{x.size} percent:{x.percent} colorpercent:{x.colorpercent}"));
+						searchResults.OrderBy(x => x.Item4).Select(x => $"x:{x.x} y:{x.y} size:{x.size} percent:{x.percent} colorpercent:{x.colorpercent}"))));
 				}
 				catch (Exception exception)
 				{
@@ -198,7 +199,7 @@ namespace LolAutoAccept
 			var bitmap = new Bitmap(trackBar4.Value, trackBar4.Value);
 			using (var g = Graphics.FromImage(bitmap))
 			{
-				g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+				g.InterpolationMode = InterpolationMode.NearestNeighbor;
 				g.DrawImage(searchBmp, 0, 0, bitmap.Width, bitmap.Height);
 				//g.DrawImage(searchBmp, 
 				//	new Rectangle(0, 0, bitmap.Width, bitmap.Height),

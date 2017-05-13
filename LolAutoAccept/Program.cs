@@ -96,11 +96,22 @@ namespace LolAutoAccept
 				(int)(rect.Left + rect.Width * xMultiplier),
 				(int)(rect.Top + rect.Height * yMultiplier));
 
+		private class PickSession
+		{
+			public PickSession(LockBitmap.LockBitmap bitmap, Patterns patterns)
+			{
+				OurPickPosition = new Lazy<int>(() => patterns.DetectOurPickPosition(bitmap), false);
+			}
+
+			public Lazy<int> OurPickPosition { get; }
+		}
+
+		private Bitmap bmpScreenshot;
+		private Patterns patterns;
+		private PickSession pickSession;
+
 		private async Task AutoWorker()
 		{
-			Bitmap bmpScreenshot = null;
-			Patterns patterns = null;
-
 			while (true)
 			{
 				try
@@ -130,6 +141,8 @@ namespace LolAutoAccept
 
 					if (bmpScreenshot == null || patterns == null || bmpScreenshot.Size != windowRect.Size)
 					{
+						pickSession = null;
+
 						if (!Patterns.SupportedResolutions.Contains(windowRect.Size))
 						{
 							await Sleep(false);
@@ -190,12 +203,14 @@ namespace LolAutoAccept
 					LeftMouseClick(windowRect, 0.5, 0.81);
 					await ShowBallonTip("Auto locked!", ToolTipIcon.Info);
 				}
+				return;
 			}
 			else if (contextMenu.AutoAccept.Checked && patterns.IsAcceptMatchButton(lockBitmap))
 			{
 				LeftMouseClick(windowRect, 0.5, 0.775);
 				await ShowBallonTip("Auto accepted!", ToolTipIcon.Info);
 			}
+			pickSession = null;
 		}
 
 		private async Task ShowBallonTip(string message, ToolTipIcon icon)
