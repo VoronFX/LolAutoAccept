@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using ImageEdgeDetection;
 using BPType = LolAutoAccept.Patterns.BanPickType;
 
 namespace LolAutoAccept.Tests
@@ -215,7 +216,7 @@ namespace LolAutoAccept.Tests
 			{
 				Console.WriteLine();
 				Console.WriteLine($"imode: {imode}, alg: {alg} res: {res.Width}x{res.Height}");
-				var patternsClass = new Patterns(res, imode);
+				var patternsClass = new Patterns(Patterns.NativeResolution, imode);
 
 				IEnumerable<double> Calc(IEnumerable<string> patterns, Func<Patterns, Patterns.MatchPoint[]> sampleSelector)
 					=> patterns.Select(pattern =>
@@ -301,7 +302,7 @@ namespace LolAutoAccept.Tests
 			var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resName);
 			if (stream == null)
 				throw new Exception($"Resource {resName} not found");
-			var lockBitmap = new LockBitmap.LockBitmap(new Bitmap(stream));
+			var lockBitmap = new LockBitmap.LockBitmap(new Bitmap(stream));//.Scale(Patterns.NativeResolution, InterpolationMode.Bicubic));//.Laplacian5x5Filter(false));
 			lockBitmap.UnlockBits();
 			return lockBitmap;
 		}
@@ -325,7 +326,7 @@ namespace LolAutoAccept.Tests
 			}
 		}
 
-		private BanTestSample[] GenBanSamples()
+		private IEnumerable<BanTestSample> GenBanSamples()
 		{
 			(int position, BPType type, string champion)[] Fill(BPType type, params
 				(int position, BPType type, string champion)[] values)
@@ -374,7 +375,7 @@ namespace LolAutoAccept.Tests
 					Fill(BPType.Stub,
 						(0, BPType.Champion, "Camille"),
 						(1, BPType.Champion, "Cassiopeia"),
-						(2, BPType.Champion, "Braum")
+						(2, BPType.Champion, "drmundo")
 					)),
 					("ChampionSelectBanLockButtonDisabledTest2_1280x720", Fill(BPType.Stub,
 						(0, BPType.Champion, "Cassiopeia"),
@@ -416,11 +417,13 @@ namespace LolAutoAccept.Tests
 						.Select(res => $"{x}_{res.Width}x{res.Height}"))
 					.Select(x => (x, Fill(BPType.Unknown, null)))
 					.ToArray())
-				.SelectMany(x => x.Item2.Select(x2 =>
-					new BanTestSample(x.Item1, GetSample($"{x.Item1}.png"), x2.position, x2.type, x2.champion))
-				)
-				.OrderBy(x => Regex.Match(x.SampleName, @"\d+x\d+").Value)
-				.ToArray();
+				.SelectMany(x =>
+				{
+					var sample = GetSample($"{x.Item1}.png");
+					return x.Item2.Select(x2 =>
+						new BanTestSample(x.Item1, sample, x2.position, x2.type, x2.champion));
+				})
+				.OrderBy(x => Regex.Match(x.SampleName, @"\d+x\d+").Value);
 		}
 
 		[TestMethod()]
@@ -439,6 +442,169 @@ namespace LolAutoAccept.Tests
 				if (test.Type == BPType.Champion)
 					Assert.AreEqual(result.champion, test.Champion.ToLowerInvariant(), $"Position {test.Position}");
 			}
+		}
+
+		[TestMethod()]
+		public void DetermineBan2()
+		{
+			var summary = new List<string>();
+			foreach (var imode in new[]
+			{
+				InterpolationMode.Bicubic, InterpolationMode.Bilinear,
+				InterpolationMode.HighQualityBicubic, InterpolationMode.HighQualityBilinear, InterpolationMode.NearestNeighbor
+			})
+			{
+				foreach (var alg in new[]
+				{
+					//Patterns.CompareAlgorithm.Plain, Patterns.CompareAlgorithm.ColorPriority,
+					//	Patterns.CompareAlgorithm.JacobKrarup
+					Patterns.CompareAlgorithm.ColorTons
+				})
+				{
+					summary.Add(DetBanAlg(imode, alg) + $" {imode} {alg}");
+					//summary.Add(string.Empty);
+				}
+			}
+			Console.WriteLine();
+			foreach (string s in summary)
+			{
+				Console.WriteLine(s);
+			}
+		}
+
+		private string DetBanAlg(InterpolationMode imode, Patterns.CompareAlgorithm alg)
+		{
+			Patterns patternsClass = null;
+			double worstTrue = double.MinValue;
+			double worstFalse = double.MaxValue;
+			var badOrder = new List<(double, string)>();
+			var goodOrder = new List<(double, string)>();
+			foreach (var test in GenBanSamples())
+			{
+				Console.WriteLine();
+				Console.WriteLine($"{test.Type} {test.Champion} {test.Position} {test.SampleName}");
+				if (patternsClass == null || patternsClass.Resolution.Width != test.Sample.Width
+				    || patternsClass.Resolution.Height != test.Sample.Height)
+					patternsClass = new Patterns(new Size(test.Sample.Width, test.Sample.Height), imode);
+
+				var res = patternsClass.DetermineBanTest2(test.Sample, test.Position, alg);
+				var right = test.Type == BPType.Unknown
+					? default((BPType type, string champion, double percent))
+					: res.First(x => x.type == test.Type && (test.Champion == null || x.champion == test.Champion.ToLowerInvariant()));
+				if (test.Type != BPType.Unknown)
+				{
+					Console.WriteLine($"RIGHT {right.percent:P} {right.champion} {right.type}");
+					goodOrder.Add(
+						(right.percent,
+						$"{right.percent:P} {right.champion} {right.type} __ {test.Champion} {test.Type} {test.Position} {test.SampleName}"
+						));
+				}
+				worstTrue = Math.Max(worstTrue, right.percent);
+				worstFalse = Math.Min(worstFalse, res.Except(new[] {right}).Min(x => x.percent));
+
+				foreach (var bad in res.Except(new[] {right}).OrderBy(x => x.percent).Take(3))
+				{
+					Console.WriteLine($"{bad.percent:P} {bad.champion} {bad.type}");
+				}
+				badOrder.AddRange(res.Except(new[] {right})
+					.Select(
+						x => (x.percent,
+							$"{x.percent:P} {x.champion} {x.type} __ {test.Champion} {test.Type} {test.Position} {test.SampleName}")));
+			}
+			Console.WriteLine();
+			Console.WriteLine("GOOD ORDERED");
+			Console.WriteLine(string.Join(Environment.NewLine, goodOrder.OrderByDescending(x => x.Item1).Select(x => x.Item2)));
+			Console.WriteLine("BAD ORDERED");
+			Console.WriteLine(string.Join(Environment.NewLine, badOrder.OrderBy(x => x.Item1).Select(x => x.Item2)));
+			Console.WriteLine();
+			Console.WriteLine();
+			Console.WriteLine($"diff: {worstFalse - worstTrue:P} worstFalse: {worstFalse:P} worstTrue: {worstTrue:P}");
+			return $"diff: {worstFalse - worstTrue:P} worstFalse: {worstFalse:P} worstTrue: {worstTrue:P}";
+		}
+
+		[TestMethod()]
+		public void BanStubTest()
+		{
+			var summary = new List<string>();
+			foreach (var imode in new[]
+			{
+				InterpolationMode.Bicubic,
+				//InterpolationMode.Bilinear,
+				//InterpolationMode.HighQualityBicubic, InterpolationMode.HighQualityBilinear, InterpolationMode.NearestNeighbor
+			})
+			{
+				foreach (var alg in new[]
+				{
+					//Patterns.CompareAlgorithm.Plain, Patterns.CompareAlgorithm.ColorPriority,
+					//	Patterns.CompareAlgorithm.JacobKrarup
+					//Patterns.CompareAlgorithm.ColorTons,
+					Patterns.CompareAlgorithm.StubMatch2,
+				})
+				{
+					var par = new[] {15}; //{ 15, 20, 25, 30, 40, 50 };
+					foreach (var StubMatchAvg in par)
+					{
+						foreach (var StubWhiteGrayLow in par)
+						{
+							foreach (var StubWhiteGrayHigh in par)
+							{
+								foreach (var StubBlackGrayHigh in par)
+								{
+									//Patterns.StubMatchAvg = StubMatchAvg;
+									//Patterns.StubWhiteGrayLow = StubWhiteGrayLow;
+									//Patterns.StubWhiteGrayHigh = StubWhiteGrayHigh;
+									//Patterns.StubBlackGrayHigh = StubBlackGrayHigh;
+									summary.Add(DoBanTest(imode, alg) +
+									            $" {imode} {alg} _ {StubMatchAvg} {StubWhiteGrayLow} {StubWhiteGrayHigh} {StubBlackGrayHigh}");
+									//summary.Add(string.Empty);
+								}
+							}
+						}
+					}
+				}
+			}
+			Console.WriteLine();
+			foreach (string s in summary)
+			{
+				Console.WriteLine(s);
+			}
+		}
+
+		private string DoBanTest(InterpolationMode imode, Patterns.CompareAlgorithm alg)
+		{
+			Patterns patternsClass = null;
+			var results = GenBanSamples()
+				//.Select(x =>
+				//new BanTestSample(x.SampleName, new LockBitmap.LockBitmap(x.Sample.RecreateBitmap().Laplacian3x3Filter(false))
+				//	, x.Position, x.Type, x.Champion))
+					.Select(test =>
+			{
+				if (patternsClass == null || patternsClass.Resolution.Width != test.Sample.Width
+				    || patternsClass.Resolution.Height != test.Sample.Height)
+					patternsClass = new Patterns(new Size(test.Sample.Width, test.Sample.Height), imode);
+				return (patternsClass.BanStubTest(test.Sample, test.Position, alg), test);
+			}).ToArray();
+
+			double worstTrue = results.Where(x => x.Item2.Type == BPType.Stub).Max(x => x.Item1);
+			double worstFalse = results.Where(x => x.Item2.Type != BPType.Stub).Min(x => x.Item1);
+
+			Console.WriteLine();
+			Console.WriteLine("GOOD ORDERED");
+			Console.WriteLine(string.Join(Environment.NewLine, results
+				.Where(x => x.Item2.Type == BPType.Stub)
+				.OrderByDescending(x => x.Item1)
+				.Select(x => $"{x.Item1:P} {x.Item2.Champion ?? x.Item2.Type.ToString()} {x.Item2.SampleName}"))
+			);
+			Console.WriteLine("BAD ORDERED");
+			Console.WriteLine(string.Join(Environment.NewLine, results
+				.Where(x => x.Item2.Type != BPType.Stub)
+				.OrderBy(x => x.Item1)
+				.Select(x => $"{x.Item1:P} {x.Item2.Champion ?? x.Item2.Type.ToString()} {x.Item2.SampleName}"))
+			);
+			Console.WriteLine();
+			Console.WriteLine();
+			Console.WriteLine($"diff: {worstFalse - worstTrue:P} worstFalse: {worstFalse:P} worstTrue: {worstTrue:P}");
+			return $"diff: {worstFalse - worstTrue:P} worstFalse: {worstFalse:P} worstTrue: {worstTrue:P}";
 		}
 	}
 }

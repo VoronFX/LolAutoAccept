@@ -8,7 +8,7 @@ namespace LockBitmap
 {
 	public class LockBitmap : IDisposable
 	{
-		private readonly Bitmap source;
+		public readonly Bitmap source;
 		private IntPtr iptr = IntPtr.Zero;
 		private BitmapData bitmapData;
 

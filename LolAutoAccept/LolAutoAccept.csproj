@@ -50,6 +50,9 @@
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="WindowsBase" />
+    <Reference Include="XnaFan.ImageComparison, Version=2.0.3.0, Culture=neutral, PublicKeyToken=ce5ccd6a9e11ca21, processorArchitecture=MSIL">
+      <HintPath>..\packages\ImageComparison.2.0.3\lib\net45\XnaFan.ImageComparison.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AutoPickForm.cs">
@@ -59,6 +62,8 @@
       <DependentUpon>AutoPickForm.cs</DependentUpon>
     </Compile>
     <Compile Include="ExtensionMethods.cs" />
+    <Compile Include="Image Edge Detection\ExtBitmap.cs" />
+    <Compile Include="Image Edge Detection\Matrix.cs" />
     <Compile Include="LockBitmap.cs" />
     <Compile Include="PatterCaptureForm.cs">
       <SubType>Form</SubType>
@@ -254,6 +259,12 @@
   <ItemGroup>
     <EmbeddedResource Include="Samples\ChampionSelectBanStub.png" />
     <EmbeddedResource Include="Samples\ChampionSelectPickStub.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Samples\ChampionSelectBanStub2.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Samples\ChampionSelectBanStub3.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

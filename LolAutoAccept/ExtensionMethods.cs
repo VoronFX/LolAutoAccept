@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Linq;
 
 namespace LolAutoAccept
@@ -7,6 +8,8 @@ namespace LolAutoAccept
 	{
 		public static Bitmap RecreateBitmap(this LockBitmap.LockBitmap lockBitmap)
 		{
+			return lockBitmap.source;
+
 			var bitmap = new Bitmap(lockBitmap.Width, lockBitmap.Height);
 			for (int x = 0; x < lockBitmap.Width; x++)
 			for (int y = 0; y < lockBitmap.Height; y++)
@@ -22,13 +25,27 @@ namespace LolAutoAccept
 				points.Min(p => p.X), points.Min(p => p.Y),
 				points.Max(p => p.X), points.Max(p => p.Y));
 			var bitmap = new Bitmap(rect.Width+1, rect.Height+1);
+			using (var lb = new LockBitmap.LockBitmap(bitmap))
 			foreach (Patterns.MatchPoint p in points)
 			{
-				bitmap.SetPixel(p.X - rect.Left, p.Y - rect.Top, p.Color);
+				lb.SetPixel(p.X - rect.Left, p.Y - rect.Top, p.Color);
 			}
 			return bitmap;
 		}
 
+		public static Bitmap Scale(this Bitmap source, Size targetSize, InterpolationMode interpolationMode)
+		{
+			if (source.Width == targetSize.Width && source.Height == targetSize.Height)
+				return source;
+			var bitmap = new Bitmap(targetSize.Width, targetSize.Height);
+			//using (source)
+			using (var g = Graphics.FromImage(bitmap))
+			{
+				g.InterpolationMode = interpolationMode;
+				g.DrawImage(source, 0, 0, bitmap.Width, bitmap.Height);
+				return bitmap;
+			}
+		}
 
 		//#if DEBUG
 		//		/// <summary>
@@ -48,36 +65,36 @@ namespace LolAutoAccept
 		//#endif
 
 
-//		public class MatchSample
-//		{
-//			private readonly MatchPoint[] points;
+		//		public class MatchSample
+		//		{
+		//			private readonly MatchPoint[] points;
 
-//			public MatchSample(MatchPoint[] points)
-//			{
-//				this.points = points;
-//			}
+		//			public MatchSample(MatchPoint[] points)
+		//			{
+		//				this.points = points;
+		//			}
 
-//			public MatchPoint this[int index] => points[index];
+		//			public MatchPoint this[int index] => points[index];
 
-//#if DEBUG
-//			/// <summary>
-//			/// For debugging purpose only
-//			/// </summary>
-//			/// <returns></returns>
-//			public Bitmap RecreateBitmap()
-//			{
-//				var rect = Rectangle.FromLTRB(
-//					points.Min(p => p.X), points.Min(p => p.Y),
-//					points.Max(p => p.X), points.Max(p => p.Y));
-//				var bitmap = new Bitmap(rect.Width, rect.Height);
-//				foreach (MatchPoint p in points)
-//				{
-//					bitmap.SetPixel(p.X - rect.Left, p.Y - rect.Top, p.Color);
-//				}
-//				return bitmap;
-//			}
-//#endif
-//		}
+		//#if DEBUG
+		//			/// <summary>
+		//			/// For debugging purpose only
+		//			/// </summary>
+		//			/// <returns></returns>
+		//			public Bitmap RecreateBitmap()
+		//			{
+		//				var rect = Rectangle.FromLTRB(
+		//					points.Min(p => p.X), points.Min(p => p.Y),
+		//					points.Max(p => p.X), points.Max(p => p.Y));
+		//				var bitmap = new Bitmap(rect.Width, rect.Height);
+		//				foreach (MatchPoint p in points)
+		//				{
+		//					bitmap.SetPixel(p.X - rect.Left, p.Y - rect.Top, p.Color);
+		//				}
+		//				return bitmap;
+		//			}
+		//#endif
+		//		}
 
 	}
 }
