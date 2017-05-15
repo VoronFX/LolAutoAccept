@@ -357,12 +357,19 @@ namespace LolAutoAccept
 						return color;
 					}, color => Color.FromArgb(color[0] / white.Length, color[1] / white.Length, color[2] / white.Length));
 
-					var match = (black.Count(x => Math.Abs(x.Color.R - blackAvg.R) < blackAvgEdge
-											  && Math.Abs(x.Color.G - blackAvg.G) < blackAvgEdge
-											  && Math.Abs(x.Color.B - blackAvg.B) < blackAvgEdge)
-						  + white.Count(x => Math.Abs(x.Color.R - whiteAvg.R) < whiteAvgEdge
-											  && Math.Abs(x.Color.G - whiteAvg.G) < whiteAvgEdge
-											  && Math.Abs(x.Color.B - whiteAvg.B) < whiteAvgEdge)) / (double)sample.Length;
+					double AvgChannelLevel(byte c, byte avg, double level)
+						=> (1 - Math.Min(1, Math.Abs(c - avg) / level));
+
+					double AvgChannelLevelEdge(byte c, byte avg, double level)
+						=> Math.Abs(c - avg) < level ? 1 : 0;
+
+					double AvgColorLevel(Color c, Color avg, double level)
+						=> AvgChannelLevelEdge(c.R, avg.R, level)
+						* AvgChannelLevelEdge(c.G, avg.G, level) 
+						* AvgChannelLevelEdge(c.B, avg.B, level);
+
+					var match = (black.Sum(x => AvgColorLevel(x.Color, blackAvg, blackAvgEdge))
+						  + white.Sum(x => AvgColorLevel(x.Color, whiteAvg, whiteAvgEdge))) / (double)sample.Length;
 
 					return 1 - match * Math.Min(1, Math.Max(0, ((whiteAvg.R + whiteAvg.G + whiteAvg.B) / 3
 									- (blackAvg.R + blackAvg.G + blackAvg.B) / 3) / 30d));

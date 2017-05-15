@@ -6,9 +6,9 @@ using System.Xml.Schema;
 
 namespace LockBitmap
 {
-	public class LockBitmap : IDisposable
+	public sealed class LockBitmap : IDisposable
 	{
-		public readonly Bitmap source;
+		private readonly Bitmap source;
 		private IntPtr iptr = IntPtr.Zero;
 		private BitmapData bitmapData;
 

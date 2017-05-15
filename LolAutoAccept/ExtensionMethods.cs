@@ -1,3 +1,4 @@
+using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
@@ -8,7 +9,8 @@ namespace LolAutoAccept
 	{
 		public static Bitmap RecreateBitmap(this LockBitmap.LockBitmap lockBitmap)
 		{
-			return lockBitmap.source;
+			throw new NotImplementedException();
+			//return lockBitmap.source;
 
 			var bitmap = new Bitmap(lockBitmap.Width, lockBitmap.Height);
 			for (int x = 0; x < lockBitmap.Width; x++)

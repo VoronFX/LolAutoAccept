@@ -3,6 +3,7 @@ using LolAutoAccept;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.IO;
@@ -140,7 +141,7 @@ namespace LolAutoAccept.Tests
 				InterpolationMode.HighQualityBicubic, InterpolationMode.HighQualityBilinear, InterpolationMode.NearestNeighbor
 			})
 			{
-				foreach (var alg in new[] {Patterns.CompareAlgorithm.Plain, Patterns.CompareAlgorithm.ColorPriority})
+				foreach (var alg in new[] { Patterns.CompareAlgorithm.Plain, Patterns.CompareAlgorithm.ColorPriority })
 				{
 					TestAlgInterpolation(alg, imode, summary);
 					summary.Add(string.Empty);
@@ -289,7 +290,7 @@ namespace LolAutoAccept.Tests
 				var sample = GetSample(name);
 
 				if (patternsClass == null || patternsClass.Resolution.Width != sample.Width
-				    || patternsClass.Resolution.Height != sample.Height)
+					|| patternsClass.Resolution.Height != sample.Height)
 					patternsClass = new Patterns(new Size(sample.Width, sample.Height));
 
 				Assert.AreEqual(test.position, patternsClass.DetectOurPickPosition(sample), name);
@@ -434,7 +435,7 @@ namespace LolAutoAccept.Tests
 			foreach (var test in GenBanSamples())
 			{
 				if (patternsClass == null || patternsClass.Resolution.Width != test.Sample.Width
-				    || patternsClass.Resolution.Height != test.Sample.Height)
+					|| patternsClass.Resolution.Height != test.Sample.Height)
 					patternsClass = new Patterns(new Size(test.Sample.Width, test.Sample.Height));
 
 				var result = patternsClass.DetermineBanTest(test.Sample, test.Position);
@@ -484,7 +485,7 @@ namespace LolAutoAccept.Tests
 				Console.WriteLine();
 				Console.WriteLine($"{test.Type} {test.Champion} {test.Position} {test.SampleName}");
 				if (patternsClass == null || patternsClass.Resolution.Width != test.Sample.Width
-				    || patternsClass.Resolution.Height != test.Sample.Height)
+					|| patternsClass.Resolution.Height != test.Sample.Height)
 					patternsClass = new Patterns(new Size(test.Sample.Width, test.Sample.Height), imode);
 
 				var res = patternsClass.DetermineBanTest2(test.Sample, test.Position, alg);
@@ -500,13 +501,13 @@ namespace LolAutoAccept.Tests
 						));
 				}
 				worstTrue = Math.Max(worstTrue, right.percent);
-				worstFalse = Math.Min(worstFalse, res.Except(new[] {right}).Min(x => x.percent));
+				worstFalse = Math.Min(worstFalse, res.Except(new[] { right }).Min(x => x.percent));
 
-				foreach (var bad in res.Except(new[] {right}).OrderBy(x => x.percent).Take(3))
+				foreach (var bad in res.Except(new[] { right }).OrderBy(x => x.percent).Take(3))
 				{
 					Console.WriteLine($"{bad.percent:P} {bad.champion} {bad.type}");
 				}
-				badOrder.AddRange(res.Except(new[] {right})
+				badOrder.AddRange(res.Except(new[] { right })
 					.Select(
 						x => (x.percent,
 							$"{x.percent:P} {x.champion} {x.type} __ {test.Champion} {test.Type} {test.Position} {test.SampleName}")));
@@ -541,7 +542,7 @@ namespace LolAutoAccept.Tests
 					Patterns.CompareAlgorithm.StubMatch2,
 				})
 				{
-					var par = new[] {15}; //{ 15, 20, 25, 30, 40, 50 };
+					var par = new[] { 15 }; //{ 15, 20, 25, 30, 40, 50 };
 					foreach (var StubMatchAvg in par)
 					{
 						foreach (var StubWhiteGrayLow in par)
@@ -555,7 +556,7 @@ namespace LolAutoAccept.Tests
 									//Patterns.StubWhiteGrayHigh = StubWhiteGrayHigh;
 									//Patterns.StubBlackGrayHigh = StubBlackGrayHigh;
 									summary.Add(DoBanTest(imode, alg) +
-									            $" {imode} {alg} _ {StubMatchAvg} {StubWhiteGrayLow} {StubWhiteGrayHigh} {StubBlackGrayHigh}");
+												$" {imode} {alg} _ {StubMatchAvg} {StubWhiteGrayLow} {StubWhiteGrayHigh} {StubBlackGrayHigh}");
 									//summary.Add(string.Empty);
 								}
 							}
@@ -574,13 +575,13 @@ namespace LolAutoAccept.Tests
 		{
 			Patterns patternsClass = null;
 			var results = GenBanSamples()
-				//.Select(x =>
-				//new BanTestSample(x.SampleName, new LockBitmap.LockBitmap(x.Sample.RecreateBitmap().Laplacian3x3Filter(false))
-				//	, x.Position, x.Type, x.Champion))
+					//.Select(x =>
+					//new BanTestSample(x.SampleName, new LockBitmap.LockBitmap(x.Sample.RecreateBitmap().Laplacian3x3Filter(false))
+					//	, x.Position, x.Type, x.Champion))
 					.Select(test =>
 			{
 				if (patternsClass == null || patternsClass.Resolution.Width != test.Sample.Width
-				    || patternsClass.Resolution.Height != test.Sample.Height)
+					|| patternsClass.Resolution.Height != test.Sample.Height)
 					patternsClass = new Patterns(new Size(test.Sample.Width, test.Sample.Height), imode);
 				return (patternsClass.BanStubTest(test.Sample, test.Position, alg), test);
 			}).ToArray();
@@ -606,5 +607,74 @@ namespace LolAutoAccept.Tests
 			Console.WriteLine($"diff: {worstFalse - worstTrue:P} worstFalse: {worstFalse:P} worstTrue: {worstTrue:P}");
 			return $"diff: {worstFalse - worstTrue:P} worstFalse: {worstFalse:P} worstTrue: {worstTrue:P}";
 		}
+
+		[TestMethod()]
+		public void CachedBitmapPixelsSpeedTest()
+		{
+			var stopWatch = new Stopwatch();
+			const int mulTimes = 100;
+			int dummySum = 0;
+
+			var bitmap = new Bitmap(500, 500);
+			stopWatch.Start();
+			for (int mul = 0; mul < mulTimes; mul++)
+				for (int x = 0; x < bitmap.Width; x++)
+					for (int y = 0; y < bitmap.Height; y++)
+					{
+						var pixel = bitmap.GetPixel(x, y);
+						dummySum += pixel.A + pixel.R + pixel.G + pixel.B;
+					}
+			stopWatch.Stop();
+
+			var bitmapTime = stopWatch.Elapsed;
+			using (var lockBitmap = new LockBitmap.LockBitmap(bitmap))
+			{
+				stopWatch.Restart();
+				for (int mul = 0; mul < mulTimes; mul++)
+					for (int x = 0; x < lockBitmap.Width; x++)
+						for (int y = 0; y < lockBitmap.Height; y++)
+						{
+							var pixel = lockBitmap.GetPixel(x, y);
+							dummySum += pixel.A + pixel.R + pixel.G + pixel.B;
+						}
+				stopWatch.Stop();
+			}
+			var lockBitmapTime = stopWatch.Elapsed;
+
+			var cachedBitmap = new CachedBitmapPixels(bitmap);
+			stopWatch.Restart();
+			for (int mul = 0; mul < mulTimes; mul++)
+				for (int x = 0; x < cachedBitmap.Width; x++)
+					for (int y = 0; y < cachedBitmap.Height; y++)
+					{
+						var pixel = cachedBitmap[x, y];
+						dummySum += pixel.A + pixel.R + pixel.G + pixel.B;
+					}
+			stopWatch.Stop();
+			var cachedBitmapTime = stopWatch.Elapsed;
+
+			var cachedBitmapArray = new CachedBitmapPixels(bitmap);
+			stopWatch.Restart();
+			for (int mul = 0; mul < mulTimes; mul++)
+			{
+				var pixels = cachedBitmapArray.CacheAll();
+				for (int x = 0; x < cachedBitmapArray.Width; x++)
+					for (int y = 0; y < cachedBitmapArray.Height; y++)
+					{
+						var pixel = pixels[x + y * cachedBitmapArray.Width];
+						dummySum += pixel.A + pixel.R + pixel.G + pixel.B;
+					}
+			}
+			stopWatch.Stop();
+			var cachedBitmapArrayTime = stopWatch.Elapsed;
+			Console.WriteLine($"Bitmap time {bitmapTime}");
+			Console.WriteLine($"LockBitmap time {lockBitmapTime}");
+			Console.WriteLine($"CachedBitmapTime time {cachedBitmapTime}");
+			Console.WriteLine($"CachedBitmapArrayTime time {cachedBitmapArrayTime}");
+
+			Assert.IsTrue(cachedBitmapTime < bitmapTime && cachedBitmapTime < lockBitmapTime);
+			Assert.IsTrue(cachedBitmapArrayTime < bitmapTime && cachedBitmapArrayTime < lockBitmapTime);
+		}
 	}
+
 }
