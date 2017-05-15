@@ -123,7 +123,7 @@ namespace LolAutoAccept
 
 		private Lazy<MatchPoint[]> PrepareSample(string name, Size scale)
 		{
-			var bitmap = GetSample(name);//.Laplacian5x5Filter(false);
+			var bitmap = GetSample(name); //.Laplacian5x5Filter(false);
 			return new Lazy<MatchPoint[]>(() =>
 			{
 				using (bitmap)
@@ -242,6 +242,7 @@ namespace LolAutoAccept
 			StubMatch,
 			StubMatch2
 		}
+
 		public static int StubMatchAvg = 30;
 		public static int StubWhiteGrayLow = 20;
 		public static int StubWhiteGrayHigh = 50;
@@ -336,8 +337,8 @@ namespace LolAutoAccept
 					const int whiteAvgEdge = 70;
 					const int blackAvgEdge = 45;
 
-					var black = sample.Where(x => 
-					x.Color == Color.FromArgb(0,0,0)).ToArray();
+					var black = sample.Where(x =>
+						x.Color == Color.FromArgb(0, 0, 0)).ToArray();
 					var blackAvg = black.Aggregate(new int[3], (color, pixel) =>
 					{
 						var targetPixel = screenshot.GetPixel(pixel.X + offset.X, pixel.Y + offset.Y);
@@ -347,7 +348,7 @@ namespace LolAutoAccept
 						return color;
 					}, color => Color.FromArgb(color[0] / black.Length, color[1] / black.Length, color[2] / black.Length));
 
-					var white = sample.Where(x => x.Color == Color.FromArgb(255,255,255)).ToArray();
+					var white = sample.Where(x => x.Color == Color.FromArgb(255, 255, 255)).ToArray();
 					var whiteAvg = white.Aggregate(new int[3], (color, pixel) =>
 					{
 						var targetPixel = screenshot.GetPixel(pixel.X + offset.X, pixel.Y + offset.Y);
@@ -365,14 +366,14 @@ namespace LolAutoAccept
 
 					double AvgColorLevel(Color c, Color avg, double level)
 						=> AvgChannelLevelEdge(c.R, avg.R, level)
-						* AvgChannelLevelEdge(c.G, avg.G, level) 
-						* AvgChannelLevelEdge(c.B, avg.B, level);
+						   * AvgChannelLevelEdge(c.G, avg.G, level)
+						   * AvgChannelLevelEdge(c.B, avg.B, level);
 
 					var match = (black.Sum(x => AvgColorLevel(x.Color, blackAvg, blackAvgEdge))
-						  + white.Sum(x => AvgColorLevel(x.Color, whiteAvg, whiteAvgEdge))) / (double)sample.Length;
+								 + white.Sum(x => AvgColorLevel(x.Color, whiteAvg, whiteAvgEdge))) / (double)sample.Length;
 
 					return 1 - match * Math.Min(1, Math.Max(0, ((whiteAvg.R + whiteAvg.G + whiteAvg.B) / 3
-									- (blackAvg.R + blackAvg.G + blackAvg.B) / 3) / 30d));
+																- (blackAvg.R + blackAvg.G + blackAvg.B) / 3) / 30d));
 				default:
 					throw new ArgumentOutOfRangeException(nameof(algorithm), algorithm, null);
 			}
@@ -410,7 +411,7 @@ namespace LolAutoAccept
 
 		public (BanPickType type, string champion) DetermineBanTest(LockBitmap.LockBitmap screenshot, int position)
 		{
-			if (//IsMatch(screenshot, ChampionSelectBanStubSample.Value, BanStubTreshold, BanRects[position].Location)|| 
+			if ( //IsMatch(screenshot, ChampionSelectBanStubSample.Value, BanStubTreshold, BanRects[position].Location)|| 
 				IsMatch(screenshot, ChampionSelectBanStub2Sample.Value, BanStubTreshold, BanRects[position].Location))
 				return (BanPickType.Stub, null);
 
@@ -439,8 +440,8 @@ namespace LolAutoAccept
 				.Concat(new(BanPickType type, string champion, double percent)[]
 				{
 					(BanPickType.Stub, null, //Math.Min(
-						//IsMatchTest(screenshot, ChampionSelectBanStubSample.Value, alg, BanRects[position].Location),
-						IsMatchTest(screenshot, ChampionSelectBanStub2Sample.Value, alg, BanRects[position].Location)
+					//IsMatchTest(screenshot, ChampionSelectBanStubSample.Value, alg, BanRects[position].Location),
+					IsMatchTest(screenshot, ChampionSelectBanStub2Sample.Value, alg, BanRects[position].Location)
 					//)
 					)
 				})
@@ -466,4 +467,6 @@ namespace LolAutoAccept
 			return IsMatchTest(screenshot, ChampionSelectBanStubSample.Value, alg, BanRects[position].Location);
 		}
 	}
+
+
 }

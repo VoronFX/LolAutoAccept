@@ -126,6 +126,12 @@ namespace LolAutoAccept
 			public Color(byte r, byte g, byte b)
 				: this(255, r, g, b) { }
 
+			public static bool operator ==(Color a, Color b)
+				=> a.R == b.R && a.G == b.G && a.B == b.B && a.R == b.R;
+
+			public static bool operator !=(Color a, Color b)
+				=> !(a == b);
+
 			public static bool operator ==(System.Drawing.Color a, Color b)
 				=> a.R == b.R && a.G == b.G && a.B == b.B && a.R == b.R;
 
