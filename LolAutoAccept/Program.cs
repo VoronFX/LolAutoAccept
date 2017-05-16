@@ -98,7 +98,7 @@ namespace LolAutoAccept
 
 		private class PickSession
 		{
-			public PickSession(LockBitmap.LockBitmap bitmap, Patterns patterns)
+			public PickSession(CachedBitmapPixels bitmap, Patterns patterns)
 			{
 				OurPickPosition = new Lazy<int>(() => patterns.DetectOurPickPosition(bitmap), false);
 			}
@@ -164,8 +164,7 @@ namespace LolAutoAccept
 
 					patternCaptureForm?.AddBitmap(bmpScreenshot);
 
-					using (var bitmap = new LockBitmap.LockBitmap(bmpScreenshot))
-						await ProcessScreenshot(patterns, bitmap, windowRect);
+					await ProcessScreenshot(patterns, new CachedBitmapPixels(bmpScreenshot), windowRect);
 				}
 				catch (Exception exception)
 				{
@@ -175,7 +174,7 @@ namespace LolAutoAccept
 			}
 		}
 
-		private async Task ProcessScreenshot(Patterns patterns, LockBitmap.LockBitmap lockBitmap, Rectangle windowRect)
+		private async Task ProcessScreenshot(Patterns patterns, CachedBitmapPixels lockBitmap, Rectangle windowRect)
 		{
 			if ((contextMenu.AutoLock.Checked || autoPickForm != null)
 				&& patterns.IsChampionSelect(lockBitmap))

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 
@@ -19,31 +20,47 @@ namespace LolAutoAccept
 
 	public sealed class DifferencePattern : Pattern
 	{
-		private readonly CachedBitmapPixels sample;
+#if DEBUG
+		public Bitmap Sample { get; }
+#endif
+		private readonly (CachedBitmapPixels.Color Color, Point Coord)[] points;
 
 		public DifferencePattern(Bitmap sample)
 		{
-			this.sample = new CachedBitmapPixels(sample);
+#if DEBUG
+			this.Sample = sample;
+#endif
+			var cachedBitmap = new CachedBitmapPixels(sample);
+			var checkPoints = new List<(CachedBitmapPixels.Color Color, Point Point)>();
+
+			for (int x = 0; x < sample.Width; x++)
+				for (int y = 0; y < sample.Height; y++)
+				{
+					if (cachedBitmap[x, y].A == 0xFF)
+						checkPoints.Add((cachedBitmap[x, y], new Point(x, y)));
+				}
+			points = checkPoints.ToArray();
 		}
 
 		public override double Match(CachedBitmapPixels image, Point offset, double threshold, bool breakEarly)
 		{
-			long match = 255 * sample.CacheAll().Length;
-			long breakEarlyThreshold = (long) (match * threshold);
-			for (int x = 0; x < sample.Width; x++)
-			for (int y = 0; y < sample.Height; y++)
+			long match = 255 * 3 * points.Length;
+			long breakEarlyThreshold = (long)(match * threshold);
+			for (int i = 0; i < points.Length; i++)
 			{
-				var imagePixel = image[x+offset.X, y+offset.Y];
-				var samplePixel = image[x, y];
+				var point = points[i];
+				var imagePixel = image[point.Coord.X + offset.X, point.Coord.Y + offset.Y];
 
-				match -= Math.Abs(imagePixel.R - samplePixel.R)
-					  + Math.Abs(imagePixel.G - samplePixel.G)
-				      + Math.Abs(imagePixel.B - samplePixel.B);
+				match -= Math.Abs(imagePixel.R - point.Color.R)
+						 + Math.Abs(imagePixel.G - point.Color.G)
+						 + Math.Abs(imagePixel.B - point.Color.B);
 
-				if (breakEarly && match < breakEarlyThreshold)
+				if (breakEarly && (match < breakEarlyThreshold
+					|| match - breakEarlyThreshold > (points.Length - i) * 255 * 3))
 					break;
 			}
-			return match / (double) sample.CacheAll().Length;
+
+			return match / (double)(255 * 3 * points.Length);
 		}
 	}
 
@@ -81,6 +98,9 @@ namespace LolAutoAccept
 
 	public sealed class ContrastMaskPattern : Pattern
 	{
+#if DEBUG
+		public Bitmap Sample { get; }
+#endif
 		private readonly byte lightHomogeneityThreshold;
 		private readonly byte darkHomogeneityThreshold;
 		private readonly float targetContrast;
@@ -90,6 +110,9 @@ namespace LolAutoAccept
 		public ContrastMaskPattern(Bitmap sample,
 			byte lightHomogeneityThreshold, byte darkHomogeneityThreshold, float targetContrast)
 		{
+#if DEBUG
+			this.Sample = sample;
+#endif
 			this.lightHomogeneityThreshold = lightHomogeneityThreshold;
 			this.darkHomogeneityThreshold = darkHomogeneityThreshold;
 			this.targetContrast = targetContrast;
@@ -97,8 +120,9 @@ namespace LolAutoAccept
 
 			Point[] ExtractPoints(CachedBitmapPixels.Color color)
 				=> cachedBitmapPixels
-					.Where(x => x == color)
-					.Select((x, i) => new Point(i % sample.Width, i / sample.Width))
+					.Select((x, i) => (x, new Point(i % sample.Width, i / sample.Width)))
+					.Where(x => x.Item1 == color)
+					.Select(x => x.Item2)
 					.ToArray();
 
 			whitePoints = ExtractPoints(new CachedBitmapPixels.Color(255, 255, 255));
@@ -144,8 +168,8 @@ namespace LolAutoAccept
 			var contrastDifference = Normalize(
 				(lightAvg.GetBrightness() - darkAvg.GetBrightness()) / targetContrast);
 
-			return HomogeneityLevel(blackPoints, darkAvg, darkHomogeneityThreshold)
-				   + HomogeneityLevel(whitePoints, lightAvg, lightHomogeneityThreshold)
+			return (HomogeneityLevel(blackPoints, darkAvg, darkHomogeneityThreshold)
+				   + HomogeneityLevel(whitePoints, lightAvg, lightHomogeneityThreshold))
 				   * contrastDifference / 2;
 		}
 	}

@@ -138,6 +138,12 @@ namespace LolAutoAccept
 			public static bool operator !=(System.Drawing.Color a, Color b)
 				=> !(a == b);
 
+			public static bool operator ==(Color a, System.Drawing.Color b)
+				=> a.R == b.R && a.G == b.G && a.B == b.B && a.R == b.R;
+
+			public static bool operator !=(Color a, System.Drawing.Color b)
+				=> !(a == b);
+
 			public static explicit operator System.Drawing.Color(Color c)
 				=> System.Drawing.Color.FromArgb(c.A, c.R, c.G, c.B);
 

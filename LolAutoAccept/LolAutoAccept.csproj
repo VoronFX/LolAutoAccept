@@ -78,6 +78,7 @@
     <Compile Include="ProgramContextMenu.cs" />
     <Compile Include="ProgramUtility.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Samples.cs" />
     <Compile Include="SearchMatchingSizeForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -261,12 +262,6 @@
   <ItemGroup>
     <EmbeddedResource Include="Samples\ChampionSelectBanStub.png" />
     <EmbeddedResource Include="Samples\ChampionSelectPickStub.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Samples\ChampionSelectBanStub2.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Samples\ChampionSelectBanStub3.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
