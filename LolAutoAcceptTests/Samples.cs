@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using ImageEdgeDetection;
 using BanPickType = LolAutoAccept.Tests.Samples.BanTestSample.BanPickType;
 
 namespace LolAutoAccept.Tests
@@ -63,8 +64,9 @@ namespace LolAutoAccept.Tests
 				.Concat(OtherScreens.All)
 				.ToArray();
 
-		public static (Bitmap patternSample, string[] truePatterns, string[] falsePatterns)[] 
-			ScreenSamples { get; } =
+		public static (Bitmap patternSample, string[] truePatterns, string[] falsePatterns)[]
+			ScreenSamples
+		{ get; } =
 		{
 			(LolAutoAccept.Samples.ChampionSelectBanLockButtonDisabled,
 				ChampionSelect.BanLockButtonDisabled,
@@ -255,28 +257,20 @@ namespace LolAutoAccept.Tests
 				.OrderBy(x => Regex.Match(x.SampleName, @"\d+x\d+").Value);
 		}
 
-		private static readonly ConcurrentDictionary<string, WeakReference<CachedBitmapPixels>> SamplesCache
-			= new ConcurrentDictionary<string, WeakReference<CachedBitmapPixels>>();
+		private static readonly WeakCache<string, CachedBitmapPixels> SamplesCache
+			= new WeakCache<string, CachedBitmapPixels>();
 
 		public static CachedBitmapPixels LoadSample(string name)
 		{
 			var resName = string.Join(".", nameof(LolAutoAccept) + nameof(Tests), "TestSamples", name);
 
-			if (SamplesCache.TryGetValue(resName, out WeakReference<CachedBitmapPixels> weakRef)
-				&& weakRef.TryGetTarget(out CachedBitmapPixels cached))
-				return cached;
-
-			var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resName);
-			if (stream == null)
-				throw new Exception($"Resource {resName} not found");
-			var sample = new CachedBitmapPixels(new Bitmap(stream));
-			SamplesCache.AddOrUpdate(resName, new WeakReference<CachedBitmapPixels>(sample), 
-				(s, reference) =>
+			return SamplesCache.GetOrAdd(resName, key =>
 			{
-				reference.SetTarget(sample);
-				return reference;
+				var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resName);
+				if (stream == null)
+					throw new Exception($"Resource {resName} not found");
+				return new CachedBitmapPixels(new Bitmap(stream));
 			});
-			return sample;
 		}
 	}
 }

@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using ImageEdgeDetection;
 
 namespace LolAutoAccept
 {
@@ -41,12 +43,21 @@ namespace LolAutoAccept
 		private static Bitmap GetChampionSample(string name)
 			=> LoadSample(ChampionSamplesFolderPath + name);
 
-		private static Bitmap LoadSample(string fullname)
+		private static Bitmap LoadSample(string resName)
 		{
-			var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(fullname);
-			if (stream == null)
-				throw new Exception($"Resource {fullname} not found");
-			return new Bitmap(stream);
+			Bitmap Load()
+			{
+				var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resName);
+				if (stream == null)
+					throw new Exception($"Resource {resName} not found");
+				return new Bitmap(stream);
+			}
+			return UseCache ? SamplesCache.GetOrAdd(resName, key => Load()) : Load();
 		}
+
+		private static readonly WeakCache<string, Bitmap> SamplesCache
+			= new WeakCache<string, Bitmap>();
+
+		public static bool UseCache { get; set; }
 	}
 }

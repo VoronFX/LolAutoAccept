@@ -1,20 +1,34 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.IO;
 using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace LolAutoAccept.Tests
 {
 	[TestClass()]
-	public class PatternSamplesTests
+	public partial class PatternSamplesTests
 	{
+		[TestMethod()]
+		public void TestScreenSamples()
+		{
+			var results = TestScreenSamplesInterpolation(InterpolationMode.NearestNeighbor);
+
+			Console.WriteLine(results);
+			Assert.IsTrue(results.AnySuccess);
+		}
+
 		[TestMethod()]
 		public void FindParamScreenSamples()
 		{
-			bool anySuccess = false;
-			var summary = new List<string>();
+			var results = new ResultList();
+
 			foreach (var imode in new[]
 			{
 				InterpolationMode.Bicubic,
@@ -24,83 +38,17 @@ namespace LolAutoAccept.Tests
 				InterpolationMode.NearestNeighbor
 			})
 			{
-				var result = TestScreenSamplesInterpolation(imode, summary);
-				anySuccess = anySuccess || result.WorstTrue - result.WorstFalse > 0;
-				summary.Add(string.Empty);
+				results.AddRange(TestScreenSamplesInterpolation(imode));
 			}
-			Console.WriteLine();
-			foreach (string s in summary)
-			{
-				Console.WriteLine(s);
-			}
-			Assert.IsTrue(anySuccess);
-		}
 
-		[TestMethod()]
-		public void TestScreenSamples()
-		{
-			var summary = new List<string>();
-
-			var result = TestScreenSamplesInterpolation(InterpolationMode.NearestNeighbor, summary);
-
-			Console.WriteLine();
-			foreach (string s in summary)
-			{
-				Console.WriteLine(s);
-			}
-			Console.WriteLine();
-			Console.WriteLine($"Result {FormatWorstTrueFalse(result.WorstFalse, result.WorstTrue)}");
-			Assert.IsTrue(result.WorstTrue - result.WorstFalse > 0);
-		}
-
-		private static (double WorstFalse, double WorstTrue) TestScreenSamplesInterpolation(InterpolationMode imode,
-			List<string> summary)
-		{
-			return Patterns.SupportedResolutions.Select(res =>
-			{
-				Console.WriteLine();
-				Console.WriteLine($"imode: {imode} res: {res.Width}x{res.Height}");
-
-				IEnumerable<double> Calc(IEnumerable<string> samples, Pattern pattern)
-					=> samples.Select(sample =>
-					{
-						var name = $"{sample}_{res.Width}x{res.Height}.png";
-						//Console.WriteLine($"Testing {name}");
-						return pattern.Match(Samples.LoadSample(name), Point.Empty);
-					});
-
-				var results = Samples.ScreenSamples.Select(tm =>
-				{
-					var pattern = new DifferencePattern(tm.patternSample.Scaled(res, imode));
-					var worstFalse = Calc(tm.falsePatterns, pattern).Max();
-					var worstTrue = Calc(tm.truePatterns, pattern).Min();
-
-					Console.WriteLine(FormatWorstTrueFalse(worstFalse, worstTrue));
-
-					return new { worstFalse, worstTrue };
-				}).ToArray();
-
-				var worstFalseSummary = results.Select(tm => tm.worstFalse).Max();
-				var worstTrueSummary = results.Select(tm => tm.worstTrue).Min();
-				var worstFalseAvgSummary = results.Select(tm => tm.worstFalse).Sum() / results.Length;
-				var worstTrueAvgSummary = results.Select(tm => tm.worstTrue).Sum() / results.Length;
-
-				summary.Add(
-					$"Absolute {FormatWorstTrueFalse(worstFalseSummary, worstTrueSummary)}"
-					+ $" Average {FormatWorstTrueFalse(worstFalseAvgSummary, worstTrueAvgSummary)}"
-					+ $" imode: {imode} res: {res.Width}x{res.Height}");
-
-				return (worstFalseSummary, worstTrueSummary);
-			}).Aggregate((double.MinValue, double.MaxValue),
-				(x, x2) => (Math.Max(x.Item1, x2.Item1), Math.Min(x.Item2, x2.Item2)));
+			Console.WriteLine(results);
+			Assert.IsTrue(results.AnySuccess);
 		}
 
 		[TestMethod()]
 		public void FindParamStubTest()
 		{
-			bool anySuccess = false;
-			var summary = new List<string>();
-
+			var results = new ResultList();
 
 			foreach (var lightHomogeneityThreshold in new byte[] { 10, 15, 25, 30, 45 })
 			{
@@ -112,24 +60,111 @@ namespace LolAutoAccept.Tests
 						//Patterns.StubWhiteGrayLow = StubWhiteGrayLow;
 						//Patterns.StubWhiteGrayHigh = StubWhiteGrayHigh;
 						//Patterns.StubBlackGrayHigh = StubBlackGrayHigh;
-						var result = TestStubSampleParams(lightHomogeneityThreshold, darkHomogeneityThreshold, targetContrast);
-						anySuccess = anySuccess || result.WorstTrue - result.WorstFalse > 0;
-						summary.Add(FormatWorstTrueFalse(result.WorstFalse, result.WorstTrue) +
-									$" _ {lightHomogeneityThreshold} {darkHomogeneityThreshold} {targetContrast}");
-						//summary.Add(string.Empty);
+						results.Add(TestStubSampleParams(lightHomogeneityThreshold, darkHomogeneityThreshold, targetContrast));
 					}
 				}
 			}
 
-			Console.WriteLine();
-			foreach (string s in summary)
-			{
-				Console.WriteLine(s);
-			}
-			Assert.IsTrue(anySuccess);
+			Console.WriteLine(results);
+			Assert.IsTrue(results.AnySuccess);
 		}
 
-		private (double WorstFalse, double WorstTrue) TestStubSampleParams(
+		[TestMethod()]
+		public void FindParamDetectBanChampion()
+		{
+			var results = new ResultList();
+			var bestDiff = double.MinValue;
+
+			Parallel.ForEach(new[]
+			{
+				//InterpolationMode.Bicubic,
+				//InterpolationMode.Bilinear,
+				//InterpolationMode.HighQualityBicubic,
+				InterpolationMode.HighQualityBilinear,
+				//InterpolationMode.NearestNeighbor
+			}, imode =>
+			{
+				Parallel.ForEach(new[]
+				{
+					1, 2, 3
+				}, shift =>
+				{
+					Parallel.ForEach(new[]
+					{
+						new Point(0, 0),
+						new Point(0, 0+shift),
+						new Point(0+shift, 0),
+						new Point(shift, shift)
+					}, point =>
+					{
+						Parallel.ForEach(new[]
+						{
+							new Size(30, 30),
+							new Size(30-shift, 30),
+							new Size(30, 30-shift),
+							new Size(30-shift, 30-shift)
+						}, size =>
+						{
+							Parallel.ForEach(new[] { 0, 1, 2, 3 },
+								crop =>
+								{
+									var result = TestDetectBanChampionParams(imode, new Rectangle(point, size), crop);
+									result.Name = $"{imode} {new Rectangle(point, size)} crop:{crop}";
+									lock (results)
+									{
+										if (result.Difference < bestDiff)
+											bestDiff = result.Difference;
+										else
+											result.Output.Dispose();
+										results.Add(result);
+									}
+								});
+						});
+					});
+				});
+			});
+
+			results = new ResultList(results.OrderByDescending(x => x.Difference));
+			Console.WriteLine(results);
+			Console.WriteLine(results.First().Output);
+			Assert.IsTrue(results.AnySuccess);
+		}
+	}
+
+	public partial class PatternSamplesTests
+	{
+		private static ResultList TestScreenSamplesInterpolation(InterpolationMode imode)
+		{
+			return new ResultList(Patterns.SupportedResolutions.Select(res =>
+			{
+
+				IEnumerable<double> Calc(IEnumerable<string> samples, Pattern pattern)
+					=> samples.Select(sample =>
+					{
+						var name = $"{sample}_{res.Width}x{res.Height}.png";
+						//Console.WriteLine($"Testing {name}");
+						return pattern.Match(Samples.LoadSample(name), Point.Empty);
+					});
+
+				var results = new ResultList(Samples.ScreenSamples.Select(tm =>
+				{
+					var pattern = new DifferencePattern(tm.patternSample.Scaled(res, imode));
+					var result = new WorstTrueFalseResult
+					{
+						WorstFalse = Calc(tm.falsePatterns, pattern).Max(),
+						WorstTrue = Calc(tm.truePatterns, pattern).Min()
+					};
+
+					return result;
+				}));
+
+				var aggregated = results.Aggregate().WithOutput(results.ToString());
+				aggregated.Name = $"imode: {imode} res: {res.Width}x{res.Height}";
+				return aggregated;
+			}));
+		}
+
+		private WorstTrueFalseResult TestStubSampleParams(
 			byte lightHomogeneityThreshold, byte darkHomogeneityThreshold, float targetContrast)
 		{
 			Size currentResolution = Size.Empty;
@@ -138,21 +173,14 @@ namespace LolAutoAccept.Tests
 
 			void EnsurePatternResolution(Size resolution)
 			{
-				Rectangle Scale(Rectangle rectangle)
-					=> resolution == Patterns.NativeResolution
-						? rectangle
-						: rectangle.Scale(resolution.Width / (double)Patterns.NativeResolution.Width,
-							resolution.Height / (double)Patterns.NativeResolution.Height);
+				if (resolution == currentResolution && banRects != null && pattern != null) return;
 
-				if (resolution != currentResolution || banRects == null || pattern == null)
-				{
-					banRects = Enumerable.Range(0, 6)
-						.Select(i => Scale(new Rectangle(200 + 38 * i + (i < 3 ? 0 : 661), 10, 30, 30))).ToArray();
+				banRects = Enumerable.Range(0, 6)
+					.Select(i => ScalePatternsRectangle(new Rectangle(200 + 38 * i + (i < 3 ? 0 : 661), 10, 30, 30), resolution)).ToArray();
 
-					pattern = new ContrastMaskPattern(
-						LolAutoAccept.Samples.ChampionSelectBanStub.Scaled(banRects.First().Size, InterpolationMode.NearestNeighbor),
-						lightHomogeneityThreshold, darkHomogeneityThreshold, targetContrast);
-				}
+				pattern = new ContrastMaskPattern(
+					LolAutoAccept.Samples.ChampionSelectBanStub.Scaled(banRects.First().Size, InterpolationMode.NearestNeighbor),
+					lightHomogeneityThreshold, darkHomogeneityThreshold, targetContrast);
 			}
 
 			var results = Samples.GenBanSamples()
@@ -165,29 +193,154 @@ namespace LolAutoAccept.Tests
 					return (pattern.Match(test.Sample, banRects[test.Position].Location), test);
 				}).ToArray();
 
-			double worstTrue = results.Where(x => x.Item2.Type == Samples.BanTestSample.BanPickType.Stub).Min(x => x.Item1);
-			double worstFalse = results.Where(x => x.Item2.Type != Samples.BanTestSample.BanPickType.Stub).Max(x => x.Item1);
+			(double, string) Format((double, Samples.BanTestSample) x) =>
+				(x.Item1, $"{x.Item2.Champion ?? x.Item2.Type.ToString()} {x.Item2.SampleName}");
 
-			Console.WriteLine();
-			Console.WriteLine("GOOD ORDERED");
-			Console.WriteLine(string.Join(Environment.NewLine, results
-				.Where(x => x.Item2.Type == Samples.BanTestSample.BanPickType.Stub)
-				.OrderBy(x => x.Item1)
-				.Select(x => $"{x.Item1:P} {x.Item2.Champion ?? x.Item2.Type.ToString()} {x.Item2.SampleName}"))
-			);
-			Console.WriteLine("BAD ORDERED");
-			Console.WriteLine(string.Join(Environment.NewLine, results
-				.Where(x => x.Item2.Type != Samples.BanTestSample.BanPickType.Stub)
-				.OrderByDescending(x => x.Item1)
-				.Select(x => $"{x.Item1:P} {x.Item2.Champion ?? x.Item2.Type.ToString()} {x.Item2.SampleName}"))
-			);
-			Console.WriteLine();
-			Console.WriteLine();
-			Console.WriteLine(FormatWorstTrueFalse(worstFalse, worstTrue));
-			return (worstFalse, worstTrue);
+			return WorstTrueFalseResult.FromBadGood(
+				results.Where(x => x.Item2.Type != Samples.BanTestSample.BanPickType.Stub).Select(Format).ToArray(),
+				results.Where(x => x.Item2.Type == Samples.BanTestSample.BanPickType.Stub).Select(Format).ToArray());
 		}
 
-		private static string FormatWorstTrueFalse(double worstFalse, double worstTrue)
-			=> $"diff: {worstTrue - worstFalse:P} worstFalse: {worstFalse:P} worstTrue: {worstTrue:P}";
+		private static readonly Lazy<Samples.BanTestSample[]> DetectBanChampionSamples =
+			new Lazy<Samples.BanTestSample[]>(() => Samples
+					.GenBanSamples()
+					.Where(x => x.Type != Samples.BanTestSample.BanPickType.Stub)
+					.ToArray(),
+				LazyThreadSafetyMode.ExecutionAndPublication);
+
+		private static readonly WeakCache<(string, int, Size, InterpolationMode), DifferencePattern>
+			BanChampionPatternsCache = new WeakCache<(string, int, Size, InterpolationMode), DifferencePattern>();
+
+		private WorstTrueFalseResult TestDetectBanChampionParams(InterpolationMode imode, Rectangle shift, int crop)
+		{
+			LolAutoAccept.Samples.UseCache = true;
+			Size currentResolution = Size.Empty;
+			Rectangle[] banRects = null;
+			(string Name, DifferencePattern Pattern)[] patterns = null;
+
+			void EnsurePatternResolution(Size resolution)
+			{
+				if (resolution == currentResolution && banRects != null && patterns != null) return;
+
+				banRects = Enumerable.Range(0, 6)
+					.Select(i => ScalePatternsRectangle(
+						new Rectangle(200 + 38 * i + (i < 3 ? 0 : 661) + shift.X, 10 + shift.Y, shift.Width, shift.Height), resolution))
+					.ToArray();
+
+				patterns = LolAutoAccept.Samples.Champions.Select(x => 
+				(x.Name, BanChampionPatternsCache.GetOrAdd((x.Name, crop, banRects.First().Size, imode), key =>
+				{
+					lock (x.Sample)
+						return new DifferencePattern(x.Sample.Croped(crop).Scaled(key.Item3, imode));
+				}))).ToArray();
+			}
+
+			var badResults = new List<(double Result, string Name)>();
+			var goodResults = new List<(double Result, string Name)>();
+
+			foreach (var test in DetectBanChampionSamples.Value)
+			{
+				//if (test.Sample.Width != 1600)
+				//	continue;
+				EnsurePatternResolution(new Size(test.Sample.Width, test.Sample.Height));
+				foreach (var pattern in patterns)
+				{
+					var list = string.Equals(test.Champion, pattern.Name, StringComparison.OrdinalIgnoreCase)
+						? goodResults
+						: badResults;
+					list.Add((pattern.Pattern.Match(test.Sample, banRects[test.Position].Location),
+												$" {pattern.Name} - {test.Champion} _ {test.SampleName}"));
+				}
+			}
+
+			return WorstTrueFalseResult.FromBadGood(
+				badResults.ToArray(),
+				goodResults.ToArray());
+		}
+
+		private Rectangle ScalePatternsRectangle(Rectangle rectangle, Size resolution)
+				=> resolution == Patterns.NativeResolution
+					? rectangle
+					: rectangle.Scale(resolution.Width / (double)Patterns.NativeResolution.Width,
+						resolution.Height / (double)Patterns.NativeResolution.Height);
+
+		private class WorstTrueFalseResult
+		{
+			public double WorstTrue { get; set; } = double.MinValue;
+			public double WorstFalse { get; set; } = double.MinValue;
+			public string Name { get; set; }
+			public TextWriter Output { get; set; } = new StringWriter();
+			public double Difference => WorstTrue - WorstFalse;
+			public bool IsSuccess => Difference > 0;
+
+			public override string ToString()
+				=> $"diff: {Difference:P} worstFalse: {WorstFalse:P} worstTrue: {WorstTrue:P} _ {Name}";
+
+			public WorstTrueFalseResult WithOutput(string output)
+			{
+				Output = new StringWriter(new StringBuilder(ToString()));
+				return this;
+			}
+
+			public static WorstTrueFalseResult FromBadGood(
+				(double Result, string Name)[] bad,
+				(double Result, string Name)[] good)
+
+			{
+				var result = new WorstTrueFalseResult()
+				{
+					WorstFalse = bad.Max(x => x.Result),
+					WorstTrue = good.Min(x => x.Result)
+				};
+				result.Output.WriteLine();
+				result.Output.WriteLine("GOOD ORDERED");
+				result.Output.WriteLine(string.Join(Environment.NewLine, good
+					.OrderBy(x => x.Result)
+					.Select(x => $"{x.Result:P} _ {x.Name}"))
+				);
+				result.Output.WriteLine("BAD ORDERED");
+				result.Output.WriteLine(string.Join(Environment.NewLine, bad
+					.OrderByDescending(x => x.Result)
+					.Select(x => $"{x.Result:P} _ {x.Name}"))
+				);
+				result.Output.WriteLine();
+				return result;
+			}
+		}
+
+		private class ResultList : List<WorstTrueFalseResult>
+		{
+			public ResultList(IEnumerable<WorstTrueFalseResult> collection)
+				: base(collection) { }
+
+			public ResultList() { }
+
+			public bool AnySuccess => this.Any(x => x.IsSuccess);
+
+			public override string ToString()
+			{
+				var output = new StringWriter();
+				output.WriteLine();
+				ForEach(x => output.WriteLine(x));
+				output.WriteLine();
+				output.WriteLine("Aggregate " + Aggregate());
+				output.WriteLine("AggregateAverage " + AggregateAverage());
+				return output.ToString();
+			}
+
+			public WorstTrueFalseResult Aggregate()
+				=> new WorstTrueFalseResult
+				{
+					WorstFalse = this.Max(x => x.WorstFalse),
+					WorstTrue = this.Min(x => x.WorstTrue)
+				};
+
+			public WorstTrueFalseResult AggregateAverage()
+				=> new WorstTrueFalseResult
+				{
+					WorstFalse = this.Sum(x => x.WorstFalse) / Count,
+					WorstTrue = this.Sum(x => x.WorstTrue) / Count
+				};
+		}
 	}
 }

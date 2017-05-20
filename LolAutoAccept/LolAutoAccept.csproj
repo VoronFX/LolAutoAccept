@@ -85,6 +85,7 @@
     <Compile Include="SearchMatchingSizeForm.Designer.cs">
       <DependentUpon>SearchMatchingSizeForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="WeakCache.cs" />
     <None Include="AllSamples.psd" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">

@@ -31,6 +31,7 @@ namespace LolAutoAccept
 		}
 
 		private Rectangle[] BanRects { get; }
+		private Rectangle[] BanStubRects { get; }
 		private Rectangle[] SummonerNameRects { get; }
 		private Rectangle[] AllieSummonerPickRects { get; }
 		private Rectangle[] EnemySummonerPickRects { get; }
@@ -81,6 +82,8 @@ namespace LolAutoAccept
 						Resolution.Height / (double) NativeResolution.Height);
 
 			BanRects = Enumerable.Range(0, 6)
+				.Select(i => Scale(new Rectangle(200 + 38 * i + (i < 3 ? 0 : 661), 12, 30, 28))).ToArray();
+			BanStubRects = Enumerable.Range(0, 6)
 				.Select(i => Scale(new Rectangle(200 + 38 * i + (i < 3 ? 0 : 661), 10, 30, 30))).ToArray();
 			SummonerNameRects = Enumerable.Range(0, 4)
 				.Select(i => Scale(new Rectangle(125, 115 + i * 80, 6, 22))).ToArray();
@@ -90,16 +93,16 @@ namespace LolAutoAccept
 				.Select(i => Scale(new Rectangle(1172, 104 + i * 80, 62, 62))).ToArray();
 
 			ChampionSamples = Samples.Champions
-				.Select(cs => new BanPickSample(cs.Name,
+				.Select(cs => new BanPickSample(cs.Name.ToLowerInvariant(),
 					new DifferencePattern(
-						cs.Sample.Scaled(BanRects.First().Size, InterpolationMode.NearestNeighbor)),
+						cs.Sample.Croped(3).Scaled(BanRects.First().Size, InterpolationMode.HighQualityBilinear)),
 					new DifferencePattern(
 						cs.Sample.Scaled(AllieSummonerPickRects.First().Size, InterpolationMode.NearestNeighbor))))
 				.ToArray();
 
 			ChampionSelectBanStubSample = new Lazy<Pattern>(() =>
 				new ContrastMaskPattern(Samples.ChampionSelectBanStub
-						.Scaled(BanRects.First().Size, InterpolationMode.NearestNeighbor), 
+						.Scaled(BanStubRects.First().Size, InterpolationMode.NearestNeighbor), 
 						15, 10, 0.1f), false);
 
 			ChampionSelectPickStubSample = new Lazy<Pattern>(() =>
@@ -112,8 +115,8 @@ namespace LolAutoAccept
 		}
 
 		private const double BaseTreshold = 0.93165;
-		private const double BanTreshold = 0.13;
 		private const double BanStubTreshold = 0.0774;
+		private const double BanTreshold = 0.89825;
 
 		public bool IsAcceptMatchButton(CachedBitmapPixels screenshot)
 			=> AcceptMatchButtonSample.Value.IsMatch(screenshot, Point.Empty, BaseTreshold)
@@ -140,10 +143,10 @@ namespace LolAutoAccept
 				.Aggregate((double.MinValue, 0), (seed, x) => x.Item1 > seed.Item1 ? x : seed).Item2;
 
 		public bool IsBanStub(CachedBitmapPixels screenshot, int position)
-			=> ChampionSelectBanStubSample.Value.IsMatch(screenshot, BanRects[position].Location, BanStubTreshold);
+			=> ChampionSelectBanStubSample.Value.IsMatch(screenshot, BanStubRects[position].Location, BanStubTreshold);
 
 		public string DetectBanChampion(CachedBitmapPixels screenshot, int position)
 			=> ChampionSamples.FirstOrDefault(x =>
-				x.BanSample.IsMatch(screenshot, BanRects[position].Location, 0.5))?.Name;
+				x.BanSample.IsMatch(screenshot, BanRects[position].Location, BanTreshold))?.Name;
 	}
 }

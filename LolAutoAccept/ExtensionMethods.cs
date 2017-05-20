@@ -27,5 +27,9 @@ namespace LolAutoAccept
 				(int)(rectangle.Y * yKoef),
 				(int)(rectangle.Width * xKoef),
 				(int)(rectangle.Height * yKoef));
+
+
+		public static Bitmap Croped(this Bitmap bitmap, int crop) => crop == 0 ? bitmap :
+			bitmap.Clone(new Rectangle(crop, crop, bitmap.Width - crop, bitmap.Height - crop), bitmap.PixelFormat);
 	}
 }

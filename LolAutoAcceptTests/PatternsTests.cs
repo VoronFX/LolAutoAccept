@@ -123,8 +123,8 @@ namespace LolAutoAccept.Tests
 			{
 				patternsClass = EnsureRightResolution(patternsClass, test.Sample.Width, test.Sample.Height);
 
-				Assert.AreEqual(patternsClass.DetectBanChampion(test.Sample, test.Position),
-					test.Champion?.ToLowerInvariant(), $"Position {test.Position}");
+				Assert.AreEqual(test.Champion?.ToLowerInvariant(),
+					patternsClass.DetectBanChampion(test.Sample, test.Position), $"Position {test.Position}");
 			}
 		}
 
