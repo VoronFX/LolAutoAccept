@@ -6,7 +6,8 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using ImageEdgeDetection;
-using BanPickType = LolAutoAccept.Tests.Samples.BanTestSample.BanPickType;
+using BanPickType = LolAutoAccept.Tests.Samples.BanPickTestSample.BanPickType;
+using SelectType = LolAutoAccept.Tests.Samples.SelectTestSample.SelectType;
 
 namespace LolAutoAccept.Tests
 {
@@ -51,6 +52,13 @@ namespace LolAutoAccept.Tests
 				"ChampionSelectLockButtonHoverTest"
 			};
 
+			public static string[] ChampionSearch { get; } =
+				BanLockButtonDisabled
+				.Concat(BanLockButtonDisabled)
+				.Concat(BanButton)
+				.Concat(LockButton)
+				.ToArray();
+
 			public static string[] All { get; } = new[]
 					{"ChampionSelectNoButtonTest"}
 				.Concat(BanLockButtonDisabled)
@@ -68,23 +76,23 @@ namespace LolAutoAccept.Tests
 			ScreenSamples
 		{ get; } =
 		{
-			(LolAutoAccept.Samples.ChampionSelectBanLockButtonDisabled,
+			(LolAutoAccept.Samples.ChampionSelect.BanLockButtonDisabled,
 				ChampionSelect.BanLockButtonDisabled,
 				All.Except(ChampionSelect.BanLockButtonDisabled).ToArray()),
 
-			(LolAutoAccept.Samples.ChampionSelectBanButton,
+			(LolAutoAccept.Samples.ChampionSelect.BanButton,
 				ChampionSelect.BanButton.Take(1).ToArray(),
 				All.Except(ChampionSelect.BanButton).ToArray()),
 
-			(LolAutoAccept.Samples.ChampionSelectBanButtonHover,
+			(LolAutoAccept.Samples.ChampionSelect.BanButtonHover,
 				ChampionSelect.BanButton.Skip(1).Take(1).ToArray(),
 				All.Except(ChampionSelect.BanButton).ToArray()),
 
-			(LolAutoAccept.Samples.ChampionSelectLockButton,
+			(LolAutoAccept.Samples.ChampionSelect.LockButton,
 				ChampionSelect.LockButton.Take(1).ToArray(),
 				All.Except(ChampionSelect.LockButton).ToArray()),
 
-			(LolAutoAccept.Samples.ChampionSelectLockButtonHover,
+			(LolAutoAccept.Samples.ChampionSelect.LockButtonHover,
 				ChampionSelect.LockButton.Skip(1).Take(1).ToArray(),
 				All.Except(ChampionSelect.LockButton).ToArray()),
 
@@ -96,7 +104,7 @@ namespace LolAutoAccept.Tests
 				OtherScreens.AcceptMatchButton.Skip(1).Take(1).ToArray(),
 				All.Except(OtherScreens.AcceptMatchButton).ToArray()),
 
-			(LolAutoAccept.Samples.ChampionSelect,
+			(LolAutoAccept.Samples.ChampionSelect.Screen,
 				ChampionSelect.All,
 				All.Except(ChampionSelect.All).ToArray())
 		};
@@ -131,7 +139,7 @@ namespace LolAutoAccept.Tests
 				}.OrderBy(test => Regex.Match(test.Item1, @"\d+x\d+").Value)
 				.ToArray();
 
-		public class BanTestSample
+		public class BanPickTestSample
 		{
 			public readonly string SampleName;
 			public readonly CachedBitmapPixels Sample;
@@ -139,7 +147,7 @@ namespace LolAutoAccept.Tests
 			public readonly BanPickType Type;
 			public readonly string Champion;
 
-			public BanTestSample(string sampleName, CachedBitmapPixels sample,
+			public BanPickTestSample(string sampleName, CachedBitmapPixels sample,
 				int position, BanPickType type, string champion)
 			{
 				SampleName = sampleName;
@@ -157,7 +165,109 @@ namespace LolAutoAccept.Tests
 			}
 		}
 
-		public static IEnumerable<BanTestSample> GenBanSamples()
+		public static IEnumerable<BanPickTestSample> GenPickSamples()
+		{
+			throw new NotImplementedException();
+			(int position, BanPickType type, string champion)[] Fill(BanPickType type, params
+				(int position, BanPickType type, string champion)[] values)
+				=> Enumerable.Range(0, 5).Select(x =>
+						(values == null || values.All(v => v.position != x))
+							? (x, type, null)
+							: values.FirstOrDefault(v => v.position == x))
+					.ToArray();
+
+			var set1 = Fill(BanPickType.Stub,
+				(1, BanPickType.Champion, "Malphite"),
+				(2, BanPickType.Champion, "MissFortune"),
+				(3, BanPickType.Champion, "Darius"),
+				(4, BanPickType.Champion, "Zilean"),
+				(5, BanPickType.Champion, "Fiddlesticks"),
+				(6, BanPickType.Champion, "XinZhao"),
+				(7, BanPickType.Champion, "Veigar"),
+				(8, BanPickType.Champion, "annie"),
+				(9, BanPickType.Champion, "Warwick"));
+
+			var set2 = Fill(BanPickType.Unknown,
+				(2, BanPickType.Stub, null));
+
+			var set3 = Fill(BanPickType.Unknown,
+				(1, BanPickType.Stub, null),
+				(2, BanPickType.Champion, "JarvanIV"),
+				(3, BanPickType.Champion, "Darius"));
+
+			var set4 = Fill(BanPickType.Stub,
+				(1, BanPickType.Champion, "caitlyn"),
+				(2, BanPickType.Champion, "Taric"),
+				(3, BanPickType.Champion, "Kayle"),
+				(4, BanPickType.Champion, "nunu"),
+				(5, BanPickType.Champion, "Ziggs"),
+				(6, BanPickType.Champion, "XinZhao"),
+				(7, BanPickType.Champion, "Veigar"),
+				(8, BanPickType.Champion, "annie"),
+				(9, BanPickType.Champion, "Warwick"));
+
+			return new(string sample, (int position, BanPickType type, string champion)[])[]
+				{
+					("ChampionSelectBanButtonHoverTest_1024x576", set1),
+					("ChampionSelectBanButtonHoverTest_1280x720", set2),
+					("ChampionSelectBanButtonHoverTest_1600x900", Fill(BanPickType.Unknown,
+						(1, BanPickType.Stub, null),
+						(2, BanPickType.Champion, "masteryi"),
+						(3, BanPickType.Champion, "Alistar")
+					)),
+					("ChampionSelectBanButtonTest_1024x576", set1),
+					("ChampionSelectBanButtonTest_1280x720", set2),
+					("ChampionSelectBanButtonTest_1600x900", set3),
+					("ChampionSelectBanLockButtonDisabledTest_1024x576", set1),
+					("ChampionSelectBanLockButtonDisabledTest_1280x720", set2),
+					("ChampionSelectBanLockButtonDisabledTest_1600x900", set3),
+					("ChampionSelectBanLockButtonDisabledTest2_1024x576",set1),
+					("ChampionSelectBanLockButtonDisabledTest2_1280x720", Fill(BanPickType.Stub,
+						(0, BanPickType.Champion, "Cassiopeia"),
+						(1, BanPickType.Champion, "Camille"),
+						(2, BanPickType.Champion, "Braum")
+					)),
+					("ChampionSelectBanLockButtonDisabledTest2_1600x900", Fill(BanPickType.Stub,
+						(0, BanPickType.Champion, "Draven"),
+						(1, BanPickType.Champion, "Camille"),
+						(2, BanPickType.Champion, "Braum")
+					)),
+					("ChampionSelectLockButtonHoverTest_1024x576", set1),
+					("ChampionSelectLockButtonHoverTest_1280x720", set2),
+					("ChampionSelectLockButtonHoverTest_1600x900", set3),
+					("ChampionSelectLockButtonTest_1024x576",set1),
+					("ChampionSelectLockButtonTest_1280x720", set2),
+					("ChampionSelectLockButtonTest_1600x900", set3),
+					("ChampionSelectNoButtonTest_1024x576", set1),
+					("ChampionSelectNoButtonTest_1280x720", Fill(BanPickType.Stub,
+						(0, BanPickType.Champion, "Fiddlesticks"),
+						(1, BanPickType.Champion, "Ezreal"),
+						(2, BanPickType.Champion, "Cassiopeia")
+					)),
+					("ChampionSelectNoButtonTest_1600x900", set1)
+				}.Concat(new[]
+					{
+						"AcceptMatchButtonHoverTest",
+						"AcceptMatchButtonTest",
+						"CreateCustomScreenTest",
+						"MainScreenTest",
+						"MainScreenTest2",
+						"PlayScreenTest",
+						"ChampionSelectBlindPickTest"
+					}.SelectMany(x => Patterns.SupportedResolutions
+						.Select(res => $"{x}_{res.Width}x{res.Height}"))
+					.Select(x => (x, Fill(BanPickType.Unknown, null)))
+					.ToArray())
+				.SelectMany(x =>
+				{
+					var sample = LoadSample($"{x.Item1}.png");
+					return x.Item2.Select(x2 =>
+						new BanPickTestSample(x.Item1, sample, x2.position, x2.type, x2.champion));
+				})
+				.OrderBy(x => Regex.Match(x.SampleName, @"\d+x\d+").Value);
+		}
+
+		public static IEnumerable<BanPickTestSample> GenBanSamples()
 		{
 			(int position, BanPickType type, string champion)[] Fill(BanPickType type, params
 				(int position, BanPickType type, string champion)[] values)
@@ -252,7 +362,75 @@ namespace LolAutoAccept.Tests
 				{
 					var sample = LoadSample($"{x.Item1}.png");
 					return x.Item2.Select(x2 =>
-						new BanTestSample(x.Item1, sample, x2.position, x2.type, x2.champion));
+						new BanPickTestSample(x.Item1, sample, x2.position, x2.type, x2.champion));
+				})
+				.OrderBy(x => Regex.Match(x.SampleName, @"\d+x\d+").Value);
+		}
+
+		public class SelectTestSample
+		{
+			public readonly string SampleName;
+			public readonly CachedBitmapPixels Sample;
+			public readonly SelectType Type;
+			public readonly string Champion;
+
+			public SelectTestSample(string sampleName, CachedBitmapPixels sample, SelectType type, string champion)
+			{
+				SampleName = sampleName;
+				Sample = sample;
+				Type = type;
+				Champion = champion;
+			}
+
+			public enum SelectType
+			{
+				Ban,
+				Pick,
+				Unknown
+			}
+		}
+
+		public static IEnumerable<SelectTestSample> GenSelectSamples()
+		{
+			var samples = new List<(string Sample, SelectType Type, string Champion)>();
+
+			samples.AddRange(new[]
+			{
+				"ChampionSelectBanButtonHoverTest_1024x576",
+				"ChampionSelectBanButtonHoverTest_1280x720",
+				"ChampionSelectBanButtonHoverTest_1600x900",
+				"ChampionSelectBanButtonTest_1024x576",
+				"ChampionSelectBanButtonTest_1280x720",
+				"ChampionSelectBanButtonTest_1600x900",
+				"ChampionSelectBanLockButtonDisabledTest_1024x576",
+				"ChampionSelectBanLockButtonDisabledTest_1280x720",
+				"ChampionSelectBanLockButtonDisabledTest_1600x900"
+			}.Select(x => (x, SelectType.Ban, "Aatrox")));
+
+			samples.AddRange(new[]
+			{
+				"ChampionSelectBanLockButtonDisabledTest2_1024x576",
+				"ChampionSelectBanLockButtonDisabledTest2_1280x720",
+				"ChampionSelectBanLockButtonDisabledTest2_1600x900",
+				"ChampionSelectLockButtonHoverTest_1024x576",
+				"ChampionSelectLockButtonHoverTest_1280x720",
+				"ChampionSelectLockButtonHoverTest_1600x900",
+				"ChampionSelectLockButtonTest_1024x576",
+				"ChampionSelectLockButtonTest_1280x720",
+				"ChampionSelectLockButtonTest_1600x900"
+			}.Select(x => (x, SelectType.Pick, "Ahri")));
+
+			samples.AddRange(new[]
+			{
+				"ChampionSelectNoButtonTest_1024x576",
+				"ChampionSelectNoButtonTest_1280x720",
+				"ChampionSelectNoButtonTest_1600x900"
+			}.Select(x => (x, SelectType.Unknown, (string)null)));
+
+			return samples.Select(x =>
+				{
+					var sample = LoadSample($"{x.Sample}.png");
+					return new SelectTestSample(x.Sample, sample, x.Type, x.Champion);
 				})
 				.OrderBy(x => Regex.Match(x.SampleName, @"\d+x\d+").Value);
 		}
@@ -269,8 +447,13 @@ namespace LolAutoAccept.Tests
 				var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resName);
 				if (stream == null)
 					throw new Exception($"Resource {resName} not found");
-				return new CachedBitmapPixels(new Bitmap(stream));
+				var res = new CachedBitmapPixels(new Bitmap(stream));
+				res.CacheAll();
+				return res;
 			});
 		}
+
+		public static CachedBitmapPixels LoadSample(string name, Size resolution)
+			=> LoadSample($"{name}_{resolution.Width}x{resolution.Height}.png");
 	}
 }

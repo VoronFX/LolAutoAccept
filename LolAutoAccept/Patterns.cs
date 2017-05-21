@@ -8,10 +8,10 @@ using XnaFan.ImageComparison;
 
 namespace LolAutoAccept
 {
-	public class Patterns
+	public partial class Patterns
 	{
 		public static Size[] SupportedResolutions { get; }
-			= {new Size(1024, 576), new Size(1280, 720), new Size(1600, 900)};
+			= { new Size(1024, 576), new Size(1280, 720), new Size(1600, 900) };
 
 		public static Size NativeResolution { get; }
 			= new Size(1280, 720);
@@ -21,36 +21,23 @@ namespace LolAutoAccept
 			public readonly string Name;
 			public readonly Pattern BanSample;
 			public readonly Pattern PickSample;
+			public readonly Pattern FirstSelectSample;
 
-			public BanPickSample(string name, Pattern banSample, Pattern pickSample)
+			public BanPickSample(string name, Pattern banSample, Pattern pickSample, Pattern firstSelectSample)
 			{
 				Name = name;
 				BanSample = banSample;
 				PickSample = pickSample;
+				FirstSelectSample = firstSelectSample;
 			}
 		}
 
-		private Rectangle[] BanRects { get; }
-		private Rectangle[] BanStubRects { get; }
-		private Rectangle[] SummonerNameRects { get; }
-		private Rectangle[] AllieSummonerPickRects { get; }
-		private Rectangle[] EnemySummonerPickRects { get; }
-
 		private Lazy<Pattern> AcceptMatchButtonSample { get; }
 		private Lazy<Pattern> AcceptMatchButtonHoverSample { get; }
-		private Lazy<Pattern> ChampionSelectSample { get; }
-		private Lazy<Pattern> ChampionSelectBanButtonSample { get; }
-		private Lazy<Pattern> ChampionSelectBanButtonHoverSample { get; }
-		private Lazy<Pattern> ChampionSelectBanLockButtonDisabledSample { get; }
-		private Lazy<Pattern> ChampionSelectLockButtonSample { get; }
-		private Lazy<Pattern> ChampionSelectLockButtonHoverSample { get; }
+
+		private ChampionSelectPatterns ChampionSelect { get; }
 
 		private BanPickSample[] ChampionSamples { get; }
-
-		private Lazy<Pattern> ChampionSelectBanStubSample { get; }
-		private Lazy<Pattern> ChampionSelectPickStubSample { get; }
-
-		private Lazy<Pattern> ChampionSelectDetectPickPositionSample { get; }
 
 		public Size Resolution { get; }
 
@@ -60,6 +47,7 @@ namespace LolAutoAccept
 				throw new ArgumentException($"Resolution {resolution} is not supported");
 
 			Resolution = resolution;
+			ChampionSelect = new ChampionSelectPatterns(resolution);
 
 			Lazy<Pattern> PrepareSample(Bitmap sample)
 				=> new Lazy<Pattern>(() =>
@@ -68,85 +56,63 @@ namespace LolAutoAccept
 
 			AcceptMatchButtonSample = PrepareSample(Samples.AcceptMatchButton);
 			AcceptMatchButtonHoverSample = PrepareSample(Samples.AcceptMatchButtonHover);
-			ChampionSelectSample = PrepareSample(Samples.ChampionSelect);
-			ChampionSelectBanButtonSample = PrepareSample(Samples.ChampionSelectBanButton);
-			ChampionSelectBanButtonHoverSample = PrepareSample(Samples.ChampionSelectBanButtonHover);
-			ChampionSelectBanLockButtonDisabledSample = PrepareSample(Samples.ChampionSelectBanLockButtonDisabled);
-			ChampionSelectLockButtonSample = PrepareSample(Samples.ChampionSelectLockButton);
-			ChampionSelectLockButtonHoverSample = PrepareSample(Samples.ChampionSelectLockButtonHover);
-
-			Rectangle Scale(Rectangle rectangle)
-				=> Resolution == NativeResolution
-					? rectangle
-					: rectangle.Scale(Resolution.Width / (double) NativeResolution.Width,
-						Resolution.Height / (double) NativeResolution.Height);
-
-			BanRects = Enumerable.Range(0, 6)
-				.Select(i => Scale(new Rectangle(200 + 38 * i + (i < 3 ? 0 : 661), 12, 30, 28))).ToArray();
-			BanStubRects = Enumerable.Range(0, 6)
-				.Select(i => Scale(new Rectangle(200 + 38 * i + (i < 3 ? 0 : 661), 10, 30, 30))).ToArray();
-			SummonerNameRects = Enumerable.Range(0, 4)
-				.Select(i => Scale(new Rectangle(125, 115 + i * 80, 6, 22))).ToArray();
-			AllieSummonerPickRects = Enumerable.Range(0, 4)
-				.Select(i => Scale(new Rectangle(45, 104 + i * 80, 62, 62))).ToArray();
-			EnemySummonerPickRects = Enumerable.Range(0, 4)
-				.Select(i => Scale(new Rectangle(1172, 104 + i * 80, 62, 62))).ToArray();
 
 			ChampionSamples = Samples.Champions
 				.Select(cs => new BanPickSample(cs.Name.ToLowerInvariant(),
 					new DifferencePattern(
-						cs.Sample.Croped(3).Scaled(BanRects.First().Size, InterpolationMode.HighQualityBilinear)),
+						cs.Sample.Croped(3).Scaled(ChampionSelect.BanRects.First().Size, InterpolationMode.HighQualityBilinear)),
 					new DifferencePattern(
-						cs.Sample.Scaled(AllieSummonerPickRects.First().Size, InterpolationMode.NearestNeighbor))))
+						cs.Sample.Scaled(ChampionSelect.AllieSummonerPickRects.First().Size, InterpolationMode.NearestNeighbor)),
+					new DifferencePattern(
+						cs.Sample.Scaled(ChampionSelect.FirstSelectChampionRect.Size, InterpolationMode.NearestNeighbor))))
 				.ToArray();
-
-			ChampionSelectBanStubSample = new Lazy<Pattern>(() =>
-				new ContrastMaskPattern(Samples.ChampionSelectBanStub
-						.Scaled(BanStubRects.First().Size, InterpolationMode.NearestNeighbor), 
-						15, 10, 0.1f), false);
-
-			ChampionSelectPickStubSample = new Lazy<Pattern>(() =>
-				new ContrastMaskPattern(Samples.ChampionSelectPickStub
-						.Scaled(BanRects.First().Size, InterpolationMode.NearestNeighbor),
-					70, 45, 0.3f), false);
-
-			ChampionSelectDetectPickPositionSample = new Lazy<Pattern>(() =>
-				new HueSaturationPattern(SummonerNameRects.First().Size, 45f, 5f), false);
 		}
 
 		private const double BaseTreshold = 0.93165;
 		private const double BanStubTreshold = 0.0774;
 		private const double BanTreshold = 0.89825;
+		private const double ChampionSearchTreshold = 0.52195;
 
 		public bool IsAcceptMatchButton(CachedBitmapPixels screenshot)
 			=> AcceptMatchButtonSample.Value.IsMatch(screenshot, Point.Empty, BaseTreshold)
 			   || AcceptMatchButtonHoverSample.Value.IsMatch(screenshot, Point.Empty, BaseTreshold);
 
 		public bool IsChampionSelect(CachedBitmapPixels screenshot)
-			=> ChampionSelectSample.Value.IsMatch(screenshot, Point.Empty, BaseTreshold);
+			=> ChampionSelect.ScreenSample.Value.IsMatch(screenshot, Point.Empty, BaseTreshold);
 
 		public bool HasBanLockButtonDisabled(CachedBitmapPixels screenshot)
-			=> ChampionSelectBanLockButtonDisabledSample.Value.IsMatch(screenshot, Point.Empty, BaseTreshold);
+			=> ChampionSelect.BanLockButtonDisabledSample.Value.IsMatch(screenshot, Point.Empty, BaseTreshold);
 
 		public bool IsBanButton(CachedBitmapPixels screenshot)
-			=> ChampionSelectBanButtonSample.Value.IsMatch(screenshot, Point.Empty, BaseTreshold)
-			   || ChampionSelectBanButtonHoverSample.Value.IsMatch(screenshot, Point.Empty, BaseTreshold);
+			=> ChampionSelect.BanButtonSample.Value.IsMatch(screenshot, Point.Empty, BaseTreshold)
+			   || ChampionSelect.BanButtonHoverSample.Value.IsMatch(screenshot, Point.Empty, BaseTreshold);
 
 		public bool IsLockButton(CachedBitmapPixels screenshot)
-			=> ChampionSelectLockButtonSample.Value.IsMatch(screenshot, Point.Empty, BaseTreshold)
-			   || ChampionSelectLockButtonHoverSample.Value.IsMatch(screenshot, Point.Empty, BaseTreshold);
+			=> ChampionSelect.LockButtonSample.Value.IsMatch(screenshot, Point.Empty, BaseTreshold)
+			   || ChampionSelect.LockButtonHoverSample.Value.IsMatch(screenshot, Point.Empty, BaseTreshold);
 
 		public int DetectOurPickPosition(CachedBitmapPixels screenshot) =>
-			SummonerNameRects.Select(rectangle =>
-					ChampionSelectDetectPickPositionSample.Value.Match(screenshot, rectangle.Location))
+			ChampionSelect.SummonerNameRects.Select(rectangle =>
+					ChampionSelect.DetectPickPositionSample.Value.Match(screenshot, rectangle.Location))
 				.Select((x, i) => (x, i))
 				.Aggregate((double.MinValue, 0), (seed, x) => x.Item1 > seed.Item1 ? x : seed).Item2;
 
 		public bool IsBanStub(CachedBitmapPixels screenshot, int position)
-			=> ChampionSelectBanStubSample.Value.IsMatch(screenshot, BanStubRects[position].Location, BanStubTreshold);
+			=> ChampionSelect.BanStubSample.Value.IsMatch(screenshot, ChampionSelect.BanStubRects[position].Location, BanStubTreshold);
 
 		public string DetectBanChampion(CachedBitmapPixels screenshot, int position)
 			=> ChampionSamples.FirstOrDefault(x =>
-				x.BanSample.IsMatch(screenshot, BanRects[position].Location, BanTreshold))?.Name;
+				x.BanSample.IsMatch(screenshot, ChampionSelect.BanRects[position].Location, BanTreshold))?.Name;
+
+		public bool IsChampionSearch(CachedBitmapPixels screenshot)
+			=> ChampionSelect.ChampionSearchSample.Value.IsMatch(screenshot, ChampionSelect.ChampionSearchRect.Location, ChampionSearchTreshold);
+
+		public bool IsFirstSelectBan(CachedBitmapPixels screenshot)
+			=> ChampionSelect.FirstSelectBanSample.Value.IsMatch(screenshot, ChampionSelect.FirstSelectRect.Location, 0.5);
+
+		public string DetectFirstSelectChampion(CachedBitmapPixels screenshot)
+			=> ChampionSamples.FirstOrDefault(x =>
+				x.FirstSelectSample.IsMatch(screenshot, ChampionSelect.FirstSelectChampionRect.Location, 0.5))?.Name;
+
 	}
 }

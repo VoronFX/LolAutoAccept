@@ -11,7 +11,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using ImageEdgeDetection;
-using BPType = LolAutoAccept.Tests.Samples.BanTestSample.BanPickType;
+using BPType = LolAutoAccept.Tests.Samples.BanPickTestSample.BanPickType;
 
 namespace LolAutoAccept.Tests
 {
@@ -57,6 +57,14 @@ namespace LolAutoAccept.Tests
 			TestMatch((patterns, bitmap) => patterns.IsAcceptMatchButton(bitmap),
 				Samples.OtherScreens.AcceptMatchButton,
 				Samples.All.Except(Samples.OtherScreens.AcceptMatchButton).ToArray());
+		}
+
+		[TestMethod()]
+		public void IsChampionSearchTest()
+		{
+			TestMatch((patterns, bitmap) => patterns.IsChampionSearch(bitmap),
+				Samples.ChampionSelect.ChampionSearch,
+				Samples.All.Except(Samples.ChampionSelect.ChampionSearch).ToArray());
 		}
 
 		private void TestMatch(

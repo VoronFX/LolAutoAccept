@@ -19,14 +19,26 @@ namespace LolAutoAccept
 
 		public static Bitmap AcceptMatchButton => GetSample("AcceptMatchButton.png");
 		public static Bitmap AcceptMatchButtonHover => GetSample("AcceptMatchButtonHover.png");
-		public static Bitmap ChampionSelect => GetSample("ChampionSelect.png");
-		public static Bitmap ChampionSelectBanButton => GetSample("ChampionSelectBanButton.png");
-		public static Bitmap ChampionSelectBanButtonHover => GetSample("ChampionSelectBanButtonHover.png");
-		public static Bitmap ChampionSelectBanLockButtonDisabled => GetSample("ChampionSelectBanLockButtonDisabled.png");
-		public static Bitmap ChampionSelectLockButton => GetSample("ChampionSelectLockButton.png");
-		public static Bitmap ChampionSelectLockButtonHover => GetSample("ChampionSelectLockButtonHover.png");
-		public static Bitmap ChampionSelectBanStub => GetSample("ChampionSelectBanStub.png");
-		public static Bitmap ChampionSelectPickStub => throw new NotImplementedException();
+
+		public static class ChampionSelect
+		{
+			private static readonly string ChampionSelectSamplesFolderPath
+				= string.Join(@".", nameof(LolAutoAccept), "Samples", "ChampionSelect") + ".";
+
+			private static Bitmap GetChampionSelectSample(string name)
+				=> LoadSample(ChampionSelectSamplesFolderPath + name);
+
+			public static Bitmap Screen => GetChampionSelectSample("Screen.png");
+			public static Bitmap BanButton => GetChampionSelectSample("BanButton.png");
+			public static Bitmap BanButtonHover => GetChampionSelectSample("BanButtonHover.png");
+			public static Bitmap BanLockButtonDisabled => GetChampionSelectSample("BanLockButtonDisabled.png");
+			public static Bitmap LockButton => GetChampionSelectSample("LockButton.png");
+			public static Bitmap LockButtonHover => GetChampionSelectSample("LockButtonHover.png");
+			public static Bitmap BanStub => GetChampionSelectSample("BanStub.png");
+			public static Bitmap PickStub => throw new NotImplementedException();
+			public static Bitmap ChampionSearch => GetChampionSelectSample("ChampionSearch.png");
+			public static Bitmap FirstSelectChampionBan => GetChampionSelectSample("FirstSelectChampionBan.png");
+		}
 
 		public static IEnumerable<(string Name, Bitmap Sample)> Champions
 			=> Assembly

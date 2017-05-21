@@ -73,6 +73,7 @@
       <DependentUpon>PatterCaptureForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Pattern.cs" />
+    <Compile Include="Patterns.ChampionSelectPatterns.cs" />
     <Compile Include="Patterns.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="ProgramContextMenu.cs" />
@@ -114,12 +115,6 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Samples\ChampionScrolledUp.png" />
-    <EmbeddedResource Include="Samples\ChampionSelect.png" />
-    <EmbeddedResource Include="Samples\ChampionSelectBanButton.png" />
-    <EmbeddedResource Include="Samples\ChampionSelectBanButtonHover.png" />
-    <EmbeddedResource Include="Samples\ChampionSelectBanLockButtonDisabled.png" />
-    <EmbeddedResource Include="Samples\ChampionSelectLockButton.png" />
-    <EmbeddedResource Include="Samples\ChampionSelectLockButtonHover.png" />
     <EmbeddedResource Include="Samples\Champions\Aatrox_Square_0.png" />
     <EmbeddedResource Include="Samples\Champions\Ahri_Square_0.png" />
     <EmbeddedResource Include="Samples\Champions\Akali_Square_0.png" />
@@ -261,8 +256,17 @@
     <EmbeddedResource Include="Samples\AcceptMatchButtonHover.png" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Samples\ChampionSelectBanStub.png" />
-    <EmbeddedResource Include="Samples\ChampionSelectPickStub.png" />
+    <EmbeddedResource Include="Samples\ChampionSelect\BanButton.png" />
+    <EmbeddedResource Include="Samples\ChampionSelect\BanButtonHover.png" />
+    <EmbeddedResource Include="Samples\ChampionSelect\BanLockButtonDisabled.png" />
+    <EmbeddedResource Include="Samples\ChampionSelect\BanStub.png" />
+    <EmbeddedResource Include="Samples\ChampionSelect\LockButton.png" />
+    <EmbeddedResource Include="Samples\ChampionSelect\LockButtonHover.png" />
+    <EmbeddedResource Include="Samples\ChampionSelect\PickStub.png" />
+    <EmbeddedResource Include="Samples\ChampionSelect\Screen.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Samples\ChampionSelect\ChampionSearch.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

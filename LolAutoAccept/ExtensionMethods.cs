@@ -23,13 +23,13 @@ namespace LolAutoAccept
 
 		public static Rectangle Scale(this Rectangle rectangle, double xKoef, double yKoef) =>
 			new Rectangle(
-				(int)(rectangle.X * xKoef),
-				(int)(rectangle.Y * yKoef),
-				(int)(rectangle.Width * xKoef),
-				(int)(rectangle.Height * yKoef));
+				(int)Math.Round(rectangle.X * xKoef),
+				(int)Math.Round(rectangle.Y * yKoef),
+				(int)Math.Round(rectangle.Width * xKoef),
+				(int)Math.Round(rectangle.Height * yKoef));
 
 
 		public static Bitmap Croped(this Bitmap bitmap, int crop) => crop == 0 ? bitmap :
-			bitmap.Clone(new Rectangle(crop, crop, bitmap.Width - crop, bitmap.Height - crop), bitmap.PixelFormat);
+			bitmap.Clone(new Rectangle(crop, crop, bitmap.Width - crop*2, bitmap.Height - crop * 2), bitmap.PixelFormat);
 	}
 }
