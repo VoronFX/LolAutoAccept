@@ -34,12 +34,15 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Management" />
     <Reference Include="System.ValueTuple, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
     </Reference>
+    <Reference Include="System.Windows" />
+    <Reference Include="System.Xaml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -60,6 +63,9 @@
     </Compile>
     <Compile Include="AutoPickForm.Designer.cs">
       <DependentUpon>AutoPickForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="AutoPickWPF.xaml.cs">
+      <DependentUpon>AutoPickWPF.xaml</DependentUpon>
     </Compile>
     <Compile Include="CachedBitmapPixels.cs" />
     <Compile Include="ExtensionMethods.cs" />
@@ -103,6 +109,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="AutoPickForm.resx">
+      <DependentUpon>AutoPickForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="PatterCaptureForm.resx">
       <DependentUpon>PatterCaptureForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -270,6 +279,12 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Samples\ChampionSelect\FirstSelectBan.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="AutoPickWPF.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

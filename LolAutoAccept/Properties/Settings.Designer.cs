@@ -58,5 +58,16 @@ namespace LolAutoAccept.Properties {
                 this["AlwaysMonitor"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        public global::LolAutoAccept.AutoPickModel AutoPickData {
+            get {
+                return ((global::LolAutoAccept.AutoPickModel)(this["AutoPickData"]));
+            }
+            set {
+                this["AutoPickData"] = value;
+            }
+        }
     }
 }

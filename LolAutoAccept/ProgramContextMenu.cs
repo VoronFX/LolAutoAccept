@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Threading;
+using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Input;
 using LolAutoAccept.Properties;
 using Microsoft.Win32;
+using Application = System.Windows.Forms.Application;
 
 namespace LolAutoAccept
 {
@@ -32,17 +34,73 @@ namespace LolAutoAccept
 				{ Checked = Settings.Default.AutoLock };
 				AutoPick = new MenuItem("Auto pick", (sender, args) =>
 				{
-					if (program.autoPickForm == null)
+					var window = program.autoPickFormWPF;
+
+					void OpenNewAutoPick(System.Windows.Application application)
+					   => application.Dispatcher.Invoke(() =>
+						{
+							window = new AutoPickWPF();
+							window.Closed += (o, eventArgs) => program.autoPickFormWPF = null;
+							program.autoPickFormWPF = window;
+							window.Show();
+						});
+
+					if (window == null)
 					{
-						program.autoPickForm = new AutoPickForm();
-						var thread = new Thread(() => Application.Run(program.autoPickForm));
-						thread.SetApartmentState(ApartmentState.STA);
-						thread.Start();
+						var app = System.Windows.Application.Current;
+						if (app == null)
+						{
+							var thread = new Thread(() =>
+							{
+								app = new System.Windows.Application
+								{
+									ShutdownMode = ShutdownMode.OnExplicitShutdown
+								};
+								OpenNewAutoPick(app);
+								app.Run();
+							});
+
+							thread.SetApartmentState(ApartmentState.STA);
+							thread.Start();
+						}
+						else
+						{
+							OpenNewAutoPick(app);
+						}
 					}
 					else
 					{
-						program.autoPickForm.BringToFront();
+						program.autoPickFormWPF.Dispatcher.Invoke(() =>
+						{
+							if (!window.IsVisible)
+							{
+								window.Show();
+							}
+
+							if (window.WindowState == WindowState.Minimized)
+							{
+								window.WindowState = WindowState.Normal;
+							}
+
+							window.Activate();
+							window.Topmost = true;  // important
+							window.Topmost = false; // important
+							window.Focus();         // important
+						});
 					}
+
+					//if (program.autoPickForm == null)
+					//{
+					//	program.autoPickForm = new AutoPickForm();
+					//	program.autoPickForm.FormClosed += (o, eventArgs) => program.autoPickForm = null;
+					//	var thread = new Thread(() => Application.Run(program.autoPickForm));
+					//	thread.SetApartmentState(ApartmentState.STA);
+					//	thread.Start();
+					//}
+					//else
+					//{
+					//	program.autoPickForm.BringToFront();
+					//}
 				});
 
 				var rkApp = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);

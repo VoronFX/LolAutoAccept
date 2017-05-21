@@ -151,15 +151,15 @@ namespace LolAutoAccept.Tests
 		{
 			FindParams(TestDetectBanChampionParams, new[]
 				{
-					//InterpolationMode.Bicubic,
-					//InterpolationMode.Bilinear,
-					//InterpolationMode.HighQualityBicubic,
+					InterpolationMode.Bicubic,
+					InterpolationMode.Bilinear,
+					InterpolationMode.HighQualityBicubic,
 					InterpolationMode.HighQualityBilinear,
-					//InterpolationMode.NearestNeighbor
+					InterpolationMode.NearestNeighbor
 				}.SelectMany(imode =>
 					new[]
 					{
-						1, 2, 3
+						-2, -1, 1, 2, 3
 					}.SelectMany(shift =>
 						new[]
 						{

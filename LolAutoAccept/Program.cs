@@ -25,6 +25,7 @@ namespace LolAutoAccept
 
 		private PatterCaptureForm patternCaptureForm;
 		private AutoPickForm autoPickForm;
+		private AutoPickWPF autoPickFormWPF;
 
 		private readonly NotifyIcon notifyIcon;
 		private readonly ProgramContextMenu contextMenu;
@@ -96,19 +97,44 @@ namespace LolAutoAccept
 				(int)(rect.Left + rect.Width * xMultiplier),
 				(int)(rect.Top + rect.Height * yMultiplier));
 
-		private class PickSession
+		private class ChampionSelectSession
 		{
-			public PickSession(CachedBitmapPixels bitmap, Patterns patterns)
+			public ChampionSelectSession(CachedBitmapPixels bitmap, Patterns patterns)
 			{
 				OurPickPosition = new Lazy<int>(() => patterns.DetectOurPickPosition(bitmap), false);
 			}
 
 			public Lazy<int> OurPickPosition { get; }
+
+			public enum BanPickPhase
+			{
+				Initial = 0,
+				ClearSearchPressed,
+				ChampionEntered,
+				ChampionSelected,
+			}
+
+			public BanPickState BanState { get; set; }
+			public BanPickState PickState { get; set; }
+
+			public struct BanPickState
+			{
+				public BanPickState(BanPickPhase phase, int championIndex)
+				{
+					Phase = phase;
+					ChampionIndex = championIndex;
+					LastChanged = DateTime.UtcNow;
+				}
+
+				public BanPickPhase Phase { get; }
+				public int ChampionIndex { get; }
+				public DateTime LastChanged { get; }
+			}
 		}
 
 		private Bitmap bmpScreenshot;
 		private Patterns patterns;
-		private PickSession pickSession;
+		private ChampionSelectSession championSelectSession;
 
 		private async Task AutoWorker()
 		{
@@ -141,7 +167,7 @@ namespace LolAutoAccept
 
 					if (bmpScreenshot == null || patterns == null || bmpScreenshot.Size != windowRect.Size)
 					{
-						pickSession = null;
+						championSelectSession = null;
 
 						if (!Patterns.SupportedResolutions.Contains(windowRect.Size))
 						{
@@ -174,42 +200,69 @@ namespace LolAutoAccept
 			}
 		}
 
-		private async Task ProcessScreenshot(Patterns patterns, CachedBitmapPixels lockBitmap, Rectangle windowRect)
+		private async Task ProcessScreenshot(Patterns patterns, CachedBitmapPixels screenshot, Rectangle windowRect)
 		{
 			if ((contextMenu.AutoLock.Checked || autoPickForm != null)
-				&& patterns.IsChampionSelect(lockBitmap))
+				&& patterns.IsChampionSelect(screenshot))
 			{
-				if (autoPickForm != null)
+				if (autoPickForm != null && autoPickForm.Enabled) //TODO
 				{
-					if (patterns.HasBanLockButtonDisabled(lockBitmap))
+					championSelectSession = championSelectSession ?? new ChampionSelectSession(screenshot, patterns);
+
+					if (patterns.HasBanLockButtonDisabled(screenshot)
+						&& patterns.IsChampionSearch(screenshot))
 					{
-						if (true) //IsBanPhase
+						var isBanPhase = patterns.IsFirstSelectBan(screenshot);
+						var state = isBanPhase ? championSelectSession.BanState
+							: championSelectSession.PickState;
+
+						switch (state.Phase)
 						{
+							case ChampionSelectSession.BanPickPhase.Initial:
+								LeftMouseClick(windowRect, 0.7203125, 0.1);
+								state = new ChampionSelectSession.BanPickState(
+									ChampionSelectSession.BanPickPhase.ClearSearchPressed, state.ChampionIndex);
+								break;
+							case ChampionSelectSession.BanPickPhase.ClearSearchPressed:
+
+								break;
+							case ChampionSelectSession.BanPickPhase.ChampionEntered:
+								break;
+							case ChampionSelectSession.BanPickPhase.ChampionSelected:
+								break;
+							default:
+								throw new ArgumentOutOfRangeException();
 						}
-						else if (true) //IsLockPhase
+
+						if (isBanPhase)
 						{
+							championSelectSession.BanState = state;
+						}
+						else
+						{
+							championSelectSession.PickState = state;
 						}
 					}
-					else if (patterns.IsBanButton(lockBitmap))
+					else if (patterns.IsBanButton(screenshot))
 					{
 					}
-					else if (patterns.IsLockButton(lockBitmap))
+					else if (patterns.IsLockButton(screenshot))
 					{
 					}
 				}
-				else if (patterns.IsLockButton(lockBitmap))
+				else if (patterns.IsLockButton(screenshot))
 				{
 					LeftMouseClick(windowRect, 0.5, 0.81);
 					await ShowBallonTip("Auto locked!", ToolTipIcon.Info);
 				}
 				return;
 			}
-			else if (contextMenu.AutoAccept.Checked && patterns.IsAcceptMatchButton(lockBitmap))
+			else if (contextMenu.AutoAccept.Checked && patterns.IsAcceptMatchButton(screenshot))
 			{
 				LeftMouseClick(windowRect, 0.5, 0.775);
 				await ShowBallonTip("Auto accepted!", ToolTipIcon.Info);
 			}
-			pickSession = null;
+			championSelectSession = null;
 		}
 
 		private async Task ShowBallonTip(string message, ToolTipIcon icon)

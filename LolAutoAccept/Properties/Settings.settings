@@ -11,5 +11,8 @@
     <Setting Name="AlwaysMonitor" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
+    <Setting Name="AutoPickData" Type="LolAutoAccept.AutoPickModel" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>
