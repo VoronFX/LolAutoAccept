@@ -144,6 +144,20 @@ namespace LolAutoAccept.Tests
 			}
 		}
 
+		[TestMethod()]
+		public void DetectFirstSelectChampionTest()
+		{
+			Patterns patternsClass = null;
+
+			foreach (var test in Samples.GenSelectSamples())
+			{
+				patternsClass = EnsureRightResolution(patternsClass, test.Sample.Width, test.Sample.Height);
+
+				Assert.AreEqual(test.Champion?.ToLowerInvariant(),
+					patternsClass.DetectFirstSelectChampion(test.Sample));
+			}
+		}
+
 		private Patterns EnsureRightResolution(Patterns patterns, int width, int height)
 			=> EnsureRightResolution(patterns, new Size(width, height));
 

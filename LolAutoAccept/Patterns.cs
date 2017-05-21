@@ -64,7 +64,7 @@ namespace LolAutoAccept
 					new DifferencePattern(
 						cs.Sample.Scaled(ChampionSelect.AllieSummonerPickRects.First().Size, InterpolationMode.NearestNeighbor)),
 					new DifferencePattern(
-						cs.Sample.Scaled(ChampionSelect.FirstSelectChampionRect.Size, InterpolationMode.NearestNeighbor))))
+						cs.Sample.Croped(30).Scaled(ChampionSelect.FirstSelectChampionRect.Size, InterpolationMode.Bilinear))))
 				.ToArray();
 		}
 
@@ -73,6 +73,7 @@ namespace LolAutoAccept
 		private const double BanTreshold = 0.89825;
 		private const double ChampionSearchTreshold = 0.52195;
 		private const double FirstSelectBanTreshold = 0.14855;
+		private const double FirstSelectChampionTreshold = 0.89525;
 
 		public bool IsAcceptMatchButton(CachedBitmapPixels screenshot)
 			=> AcceptMatchButtonSample.Value.IsMatch(screenshot, Point.Empty, BaseTreshold)
@@ -113,7 +114,7 @@ namespace LolAutoAccept
 
 		public string DetectFirstSelectChampion(CachedBitmapPixels screenshot)
 			=> ChampionSamples.FirstOrDefault(x =>
-				x.FirstSelectSample.IsMatch(screenshot, ChampionSelect.FirstSelectChampionRect.Location, 0.5))?.Name;
+				x.FirstSelectSample.IsMatch(screenshot, ChampionSelect.FirstSelectChampionRect.Location, FirstSelectChampionTreshold))?.Name;
 
 	}
 }
