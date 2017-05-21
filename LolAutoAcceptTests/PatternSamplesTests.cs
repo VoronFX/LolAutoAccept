@@ -83,6 +83,12 @@ namespace LolAutoAccept.Tests
 			FindParams(TestChampionSearchSampleParams, paramsSet);
 		}
 
+		[TestMethod()]
+		public void FindParamFirstSelectBanTest()
+		{
+			FindParams(TestFirstSelectBanSampleParams, new [] { new object()});
+		}
+
 		private struct DiffMatchParams
 		{
 			public readonly int Crop;
@@ -305,6 +311,47 @@ namespace LolAutoAccept.Tests
 
 			var badResults = Calc(Samples.All.Except(Samples.ChampionSelect.ChampionSearch));
 			var goodResults = Calc(Samples.ChampionSelect.ChampionSearch);
+
+			return WorstTrueFalseResult.FromBadGood(
+				badResults.ToArray(),
+				goodResults.ToArray());
+		}
+
+		private WorstTrueFalseResult TestFirstSelectBanSampleParams(object dummyParams)
+		{
+			LolAutoAccept.Samples.UseCache = true;
+			Size currentResolution = Size.Empty;
+			Rectangle rect = default(Rectangle);
+			Pattern pattern = null;
+
+			void EnsurePatternResolution(Size resolution)
+			{
+				if (resolution == currentResolution && pattern != null) return;
+
+				rect = ScalePatternsRectangle(new Rectangle(343, 109, 69, 69), resolution);
+
+				var firstSelectBanSample = LolAutoAccept.Samples.ChampionSelect.FirstSelectBan;
+				lock (firstSelectBanSample)
+				{
+					pattern = new HueSaturationPattern(
+						firstSelectBanSample.Scaled(rect.Size, InterpolationMode.NearestNeighbor), 12f, 2f);
+				}
+			}
+
+			IEnumerable<(double Result, string Name)> Calc(IEnumerable<string> samples)
+				=> Patterns.SupportedResolutions.SelectMany(resolution =>
+					samples.Select(sampleName =>
+					{
+						var sample = Samples.LoadSample(sampleName, resolution);
+
+						EnsurePatternResolution(new Size(sample.Width, sample.Height));
+
+						return (pattern.Match(sample, rect.Location), $"{sampleName} {resolution}");
+					})
+				);
+
+			var badResults = Calc(Samples.All.Except(Samples.ChampionSelect.FirstSelectBan));
+			var goodResults = Calc(Samples.ChampionSelect.FirstSelectBan);
 
 			return WorstTrueFalseResult.FromBadGood(
 				badResults.ToArray(),

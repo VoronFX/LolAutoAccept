@@ -66,9 +66,20 @@ namespace LolAutoAccept
 
 	public sealed class HueSaturationPattern : Pattern
 	{
+		private readonly Point[] whitePoints;
 		private readonly Size size;
 		private readonly float targetHue;
 		private readonly float hueTolerance;
+
+		public HueSaturationPattern(Bitmap mask, float targetHue, float hueTolerance)
+			: this(mask.Size, targetHue, hueTolerance)
+		{
+			whitePoints = new CachedBitmapPixels(mask).CacheAll()
+				.Select((x, i) => (x, new Point(i % mask.Width, i / mask.Width)))
+				.Where(x => x.Item1 == new CachedBitmapPixels.Color(255, 255, 255))
+				.Select(x => x.Item2)
+				.ToArray();
+		}
 
 		public HueSaturationPattern(Size size, float targetHue, float hueTolerance)
 		{
@@ -80,19 +91,39 @@ namespace LolAutoAccept
 		public override double Match(CachedBitmapPixels image, Point offset, double threshold, bool breakEarly)
 		{
 			double match = 0;
-			double breakEarlyThreshold = size.Width * size.Height * threshold;
 
-			for (int x = offset.X; x < size.Width + offset.X; x++)
-				for (int y = offset.Y; y < size.Height + offset.Y; y++)
+			if (whitePoints != null)
+			{
+				double breakEarlyThreshold = whitePoints.Length * threshold;
+
+				foreach (Point point in whitePoints)
 				{
-					var pixel = (Color)image[x, y];
+					var pixel = (Color) image[point.X + offset.X, point.Y + offset.Y];
+
 					if (Math.Abs(targetHue - pixel.GetHue()) < hueTolerance)
 						match += pixel.GetSaturation();
 
 					if (breakEarly && match > breakEarlyThreshold)
 						break;
 				}
-			return match / size.Width / size.Height;
+				return match / whitePoints.Length;
+			}
+			else
+			{
+				double breakEarlyThreshold = size.Width * size.Height * threshold;
+
+				for (int x = offset.X; x < size.Width + offset.X; x++)
+				for (int y = offset.Y; y < size.Height + offset.Y; y++)
+				{
+					var pixel = (Color) image[x, y];
+					if (Math.Abs(targetHue - pixel.GetHue()) < hueTolerance)
+						match += pixel.GetSaturation();
+
+					if (breakEarly && match > breakEarlyThreshold)
+						break;
+				}
+				return match / size.Width / size.Height;
+			}
 		}
 	}
 

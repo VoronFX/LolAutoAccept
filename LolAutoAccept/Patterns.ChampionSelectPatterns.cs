@@ -86,6 +86,10 @@ namespace LolAutoAccept
 					new ContrastMaskPattern(Samples.ChampionSelect.ChampionSearch
 							.Scaled(ChampionSearchRect.Size, InterpolationMode.NearestNeighbor),
 						45, 20, 0.1f), false);
+				
+				FirstSelectBanSample = new Lazy<Pattern>(() =>
+					new HueSaturationPattern(Samples.ChampionSelect.FirstSelectBan.Scaled(
+						FirstSelectRect.Size, InterpolationMode.NearestNeighbor), 12f, 2f), false);
 			}
 		}
 

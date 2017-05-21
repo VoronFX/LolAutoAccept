@@ -67,6 +67,14 @@ namespace LolAutoAccept.Tests
 				Samples.All.Except(Samples.ChampionSelect.ChampionSearch).ToArray());
 		}
 
+		[TestMethod()]
+		public void IsFirstSelectBanTest()
+		{
+			TestMatch((patterns, bitmap) => patterns.IsFirstSelectBan(bitmap),
+				Samples.ChampionSelect.FirstSelectBan,
+				Samples.All.Except(Samples.ChampionSelect.FirstSelectBan).ToArray());
+		}
+
 		private void TestMatch(
 			Func<Patterns, CachedBitmapPixels, bool> testMethod,
 			string[] truePatterns, string[] falsePatterns)

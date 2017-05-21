@@ -56,7 +56,12 @@ namespace LolAutoAccept.Tests
 				BanLockButtonDisabled
 				.Concat(BanLockButtonDisabled)
 				.Concat(BanButton)
-				.Concat(LockButton)
+					.Concat(LockButton)
+					.ToArray();
+
+			public static string[] FirstSelectBan { get; } = new[]
+					{"ChampionSelectBanLockButtonDisabledTest"}
+				.Concat(BanButton)
 				.ToArray();
 
 			public static string[] All { get; } = new[]

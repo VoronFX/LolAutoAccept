@@ -37,7 +37,7 @@ namespace LolAutoAccept
 			public static Bitmap BanStub => GetChampionSelectSample("BanStub.png");
 			public static Bitmap PickStub => throw new NotImplementedException();
 			public static Bitmap ChampionSearch => GetChampionSelectSample("ChampionSearch.png");
-			public static Bitmap FirstSelectChampionBan => GetChampionSelectSample("FirstSelectChampionBan.png");
+			public static Bitmap FirstSelectBan => GetChampionSelectSample("FirstSelectBan.png");
 		}
 
 		public static IEnumerable<(string Name, Bitmap Sample)> Champions

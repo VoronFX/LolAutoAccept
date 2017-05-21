@@ -72,6 +72,7 @@ namespace LolAutoAccept
 		private const double BanStubTreshold = 0.0774;
 		private const double BanTreshold = 0.89825;
 		private const double ChampionSearchTreshold = 0.52195;
+		private const double FirstSelectBanTreshold = 0.14855;
 
 		public bool IsAcceptMatchButton(CachedBitmapPixels screenshot)
 			=> AcceptMatchButtonSample.Value.IsMatch(screenshot, Point.Empty, BaseTreshold)
@@ -108,7 +109,7 @@ namespace LolAutoAccept
 			=> ChampionSelect.ChampionSearchSample.Value.IsMatch(screenshot, ChampionSelect.ChampionSearchRect.Location, ChampionSearchTreshold);
 
 		public bool IsFirstSelectBan(CachedBitmapPixels screenshot)
-			=> ChampionSelect.FirstSelectBanSample.Value.IsMatch(screenshot, ChampionSelect.FirstSelectRect.Location, 0.5);
+			=> ChampionSelect.FirstSelectBanSample.Value.IsMatch(screenshot, ChampionSelect.FirstSelectRect.Location, FirstSelectBanTreshold);
 
 		public string DetectFirstSelectChampion(CachedBitmapPixels screenshot)
 			=> ChampionSamples.FirstOrDefault(x =>
