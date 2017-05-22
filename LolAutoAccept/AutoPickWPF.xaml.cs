@@ -47,6 +47,8 @@ namespace LolAutoAccept
 		public string[] SummonerSpells { get; }
 			= new[] { NoChangeStub }.Concat(Samples.SummonerSpells.Select(x => x.Name)).ToArray();
 
+		private AutoPickModel Model => (AutoPickModel)this.DataContext;
+
 		protected override void OnClosed(EventArgs e)
 		{
 			Settings.Default.AutoPickData = (AutoPickModel)DataContext;
@@ -54,17 +56,73 @@ namespace LolAutoAccept
 			base.OnClosed(e);
 		}
 
-		private void DataGrid_AddingNewItem(object sender, AddingNewItemEventArgs e)
+		private void Picks_AddingNewItem(object sender, AddingNewItemEventArgs e)
 		{
 			e.NewItem = new PickItem()
 			{
-				ChampionName =  Champions.First(),
+				ChampionName = Champions.First(),
 				SummonerSpell1 = NoChangeStub,
 				SummonerSpell2 = NoChangeStub,
 				Runes = NoChangeStub,
 				Masteries = NoChangeStub,
 				Role = AnyRoleStub
 			};
+		}
+
+		private void Bans_AddingNewItem(object sender, AddingNewItemEventArgs e)
+		{
+			e.NewItem = new BanItem()
+			{
+				ChampionName = Champions.First()
+			};
+		}
+
+		private void RemoveItem_OnClick(object sender, RoutedEventArgs e)
+		{
+			var item = (BanItem)((FrameworkElement)sender).DataContext;
+			var pickItem = item as PickItem;
+			var dataGrid = pickItem != null ? PickDataGrid : BanDataGrid;
+			dataGrid.CancelEdit();
+			if (pickItem != null)
+				Model.Picks.Remove(pickItem);
+			else
+				Model.Bans.Remove(item);
+		}
+		
+		private void MoveDown_OnClick(object sender, RoutedEventArgs e)
+		{
+			var item = (BanItem)((FrameworkElement)sender).DataContext;
+			var pickItem = item as PickItem;
+			if (pickItem != null)
+			{
+				var index = Model.Picks.IndexOf(pickItem);
+				if (index >= 0 && index < Model.Picks.Count - 1)
+					Model.Picks.Move(index, index + 1);
+			}
+			else
+			{
+				var index = Model.Bans.IndexOf(item);
+				if (index >= 0 && index < Model.Bans.Count - 1)
+					Model.Bans.Move(index, index + 1);
+			}
+		}
+
+		private void MoveUp_OnClick(object sender, RoutedEventArgs e)
+		{
+			var item = (BanItem)((FrameworkElement)sender).DataContext;
+			var pickItem = item as PickItem;
+			if (pickItem != null)
+			{
+				var index = Model.Picks.IndexOf(pickItem);
+				if (index > 0)
+					Model.Picks.Move(index, index - 1);
+			}
+			else
+			{
+				var index = Model.Bans.IndexOf(item);
+				if (index > 0)
+					Model.Bans.Move(index, index - 1);
+			}
 		}
 	}
 
@@ -159,7 +217,23 @@ namespace LolAutoAccept
 
 		public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
 		{
-			throw new NotImplementedException();
+			throw new NotSupportedException();
+		}
+	}
+
+	public class BoolToThicknessConverter : IValueConverter
+	{
+		public Thickness FalseThickness { get; set; }
+		public Thickness TrueThickness { get; set; }
+
+		public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+		{
+			return (bool)value ? TrueThickness : FalseThickness;
+		}
+
+		public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+		{
+			throw new NotSupportedException();
 		}
 	}
 }

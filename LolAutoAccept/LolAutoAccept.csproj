@@ -297,8 +297,8 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
+    <Resource Include="Icons\action_add_red_32xLG.png" />
     <Resource Include="Icons\action_add_32xLG.png" />
-    <Content Include="Icons\AddMark_10580_32.bmp" />
     <Content Include="Icons\Symbols_Equals_32xLG.png" />
     <EmbeddedResource Include="Samples\SummonerSpells\11_ImagePack_spells_Embeds__e_Spell_SummonerPoroThrow.png" />
     <EmbeddedResource Include="Samples\SummonerSpells\14_ImagePack_spells_Embeds__e_Spell_SummonerOdinGarrison.png" />

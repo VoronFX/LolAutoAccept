@@ -7,130 +7,236 @@
         xmlns:system="clr-namespace:System;assembly=mscorlib"
         xmlns:drawing="clr-namespace:System.Drawing;assembly=System.Drawing"
         mc:Ignorable="d"
-        d:DesignHeight="300" d:DesignWidth="300" d:DataContext="{d:DesignInstance Type=local:AutoPickModel}">
+        d:DesignHeight="500" d:DesignWidth="800" d:DataContext="{d:DesignInstance Type=local:AutoPickModel}">
     <Window.Resources>
         <local:ChampionToIconConverter x:Key="ChampionToIconConverter" />
         <local:SummonerSpellToIconConverter x:Key="SummonerSpellToIconConverter" />
         <local:NullVisibilityConverter x:Key="NullVisibilityConverter" />
+        <local:BoolToThicknessConverter FalseThickness="0" TrueThickness="3" x:Key="BoolToThicknessConverter" />
         <BitmapImage x:Key="AddIcon" UriSource="/LolAutoAccept;component/Icons/action_add_32xLG.png" />
+        <BitmapImage x:Key="AddRedIcon" UriSource="/LolAutoAccept;component/Icons/action_add_red_32xLG.png" />
         <BitmapImage x:Key="RemoveIcon" UriSource="/LolAutoAccept;component/Icons/Symbols_Critical_32xLG.png" />
-        <BitmapImage x:Key="ArrowUp" UriSource="/LolAutoAccept;component/Icons/arrow_Down_16xLG.png" />
-        <BitmapImage x:Key="ArrowDown" UriSource="/LolAutoAccept;component/Icons/arrow_Up_16xLG.png" />
+        <BitmapImage x:Key="ArrowDown" UriSource="/LolAutoAccept;component/Icons/arrow_Down_16xLG.png" />
+        <BitmapImage x:Key="ArrowUp" UriSource="/LolAutoAccept;component/Icons/arrow_Up_16xLG.png" />
+        <DataTemplate x:Key="UpTemplate" DataType="{x:Type local:BanItem}">
+            <Button
+                    Visibility="{Binding ChampionName, Converter={StaticResource NullVisibilityConverter}, FallbackValue=Hidden}"
+                    Click="MoveUp_OnClick">
+                <Button.Content>
+                    <Image Source="{StaticResource ArrowUp}" />
+                </Button.Content>
+            </Button>
+        </DataTemplate>
+        <DataTemplate x:Key="DownTemplate" DataType="{x:Type local:BanItem}">
+            <Button
+                Visibility="{Binding ChampionName, Converter={StaticResource NullVisibilityConverter}, FallbackValue=Hidden}"
+                Click="MoveDown_OnClick">
+                <Button.Content>
+                    <Image Source="{StaticResource ArrowDown}" />
+                </Button.Content>
+            </Button>
+        </DataTemplate>
+        <DataTemplate x:Key="RemoveTemplate" DataType="{x:Type local:BanItem}">
+            <Button
+                Visibility="{Binding ChampionName, Converter={StaticResource NullVisibilityConverter}, FallbackValue=Hidden}"
+                Click="RemoveItem_OnClick">
+                <Button.Content>
+                    <Image Source="{StaticResource RemoveIcon}" />
+                </Button.Content>
+            </Button>
+        </DataTemplate>
     </Window.Resources>
     <DockPanel Margin="5">
-        <StackPanel DockPanel.Dock="Top" Orientation="Vertical">
-            <CheckBox IsChecked="{Binding PostChatMessage}">
+        <StackPanel DockPanel.Dock="Top" Orientation="Vertical" Margin="0,0,0,5">
+            <CheckBox IsChecked="{Binding PostChatMessage}" x:Name="PostMessage">
                 <Label Content="Post message in chat" />
             </CheckBox>
-            <TextBox Text="{Binding Message}" />
+            <Border BorderBrush="Magenta"
+                    BorderThickness="{Binding IsChecked, ElementName=PostMessage, Converter={StaticResource BoolToThicknessConverter}}">
+                <TextBox Text="{Binding Message}" IsEnabled="{Binding IsChecked, ElementName=PostMessage}"
+                         TextWrapping="Wrap" AcceptsReturn="True" />
+            </Border>
         </StackPanel>
         <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="75*" />
+                <ColumnDefinition Width="5" />
+                <ColumnDefinition Width="50*" />
+            </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
-                <RowDefinition Height="97*"/>
-                <RowDefinition Height="114*"/>
+                <RowDefinition Height="97*" />
+                <RowDefinition Height="114*" />
             </Grid.RowDefinitions>
-            <DataGrid Grid.RowSpan="2" AutoGenerateColumns="False" IsManipulationEnabled="True" ItemsSource="{Binding Picks}" AddingNewItem="DataGrid_AddingNewItem">
-                <DataGrid.Columns>
-                    <DataGridTemplateColumn Header="Champion" Width="200">
-                        <DataGridTemplateColumn.CellEditingTemplate>
-                            <DataTemplate DataType="{x:Type local:PickItem}">
-                                <ComboBox ItemsSource="{Binding Champions, ElementName=Window}" 
-                                          SelectedItem="{Binding ChampionName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                                    <ComboBox.ItemTemplate>
-                                        <DataTemplate >
-                                            <DockPanel>
-                                                <Image Source="{Binding Converter={StaticResource ChampionToIconConverter}}"
-                                                       DockPanel.Dock="Left" MaxHeight="32" MaxWidth="32" />
-                                                <Label Content="{Binding}" VerticalAlignment="Center" />
-                                            </DockPanel>
-                                        </DataTemplate>
-                                    </ComboBox.ItemTemplate>
-                                </ComboBox>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellEditingTemplate>
-                        <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate DataType="{x:Type local:PickItem}">
-                                <DockPanel>
-                                    <Image Source="{Binding ChampionName, Converter={StaticResource ChampionToIconConverter}, FallbackValue={StaticResource AddIcon}}"
-                                           DockPanel.Dock="Left" MaxHeight="32" MaxWidth="32" />
-                                    <Label Content="{Binding ChampionName, FallbackValue='Add champion'}" VerticalAlignment="Center" />
-                                </DockPanel>
-                            </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                    
-                    <DataGridTemplateColumn Header="Summoner spell 1" Width="200">
-                        <DataGridTemplateColumn.CellEditingTemplate>
-                            <DataTemplate DataType="{x:Type local:PickItem}">
-                                <ComboBox ItemsSource="{Binding SummonerSpells, ElementName=Window}" 
-                                          SelectedItem="{Binding SummonerSpell1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
-                                    <ComboBox.ItemTemplate>
-                                        <DataTemplate >
-                                            <DockPanel>
-                                                <Image Source="{Binding Converter={StaticResource SummonerSpellToIconConverter}}"
-                                                       DockPanel.Dock="Left" MaxHeight="32" MaxWidth="32" />
-                                                <Label Content="{Binding}" VerticalAlignment="Center" />
-                                            </DockPanel>
-                                        </DataTemplate>
-                                    </ComboBox.ItemTemplate>
-                                </ComboBox>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellEditingTemplate>
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate DataType="{x:Type local:PickItem}">
-                                <DockPanel>
-                                    <Image Source="{Binding SummonerSpell1, Converter={StaticResource SummonerSpellToIconConverter}}"
-                                           DockPanel.Dock="Left" MaxHeight="32" MaxWidth="32" />
-                                    <Label Content="{Binding SummonerSpell1}" VerticalAlignment="Center" />
-                                </DockPanel>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                    
-                    <DataGridTemplateColumn>
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate DataType="{x:Type local:PickItem}">
-                                <Button Visibility="{Binding ChampionName, Converter={StaticResource NullVisibilityConverter}, FallbackValue=Hidden}">
-                                    <Button.Content>
-                                        <Image Source="{StaticResource ArrowUp}" />
-                                    </Button.Content>
-                                </Button>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
+            <DockPanel Grid.RowSpan="2" Grid.Column="0">
+                <CheckBox IsChecked="{Binding EnableAutoPick}" x:Name="AutoPick" DockPanel.Dock="Top">
+                    <Label Content="Enable auto pick" />
+                </CheckBox>
+                <Border BorderBrush="Lime"
+                        BorderThickness="{Binding IsChecked, ElementName=AutoPick, Converter={StaticResource BoolToThicknessConverter}}">
 
-                    <DataGridTemplateColumn>
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate DataType="{x:Type local:PickItem}">
-                                <Button Visibility="{Binding ChampionName, Converter={StaticResource NullVisibilityConverter}, FallbackValue=Hidden}">
-                                    <Button.Content>
-                                        <Image Source="{StaticResource ArrowDown}"/>
-                                    </Button.Content>
-                                </Button>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
+                    <DataGrid  AutoGenerateColumns="False" IsManipulationEnabled="True" CanUserResizeColumns="False" CanUserResizeRows="False" CanUserReorderColumns="False" ItemsSource="{Binding Picks}"
+                              IsEnabled="{Binding IsChecked, ElementName=AutoPick}"
+                              AddingNewItem="Picks_AddingNewItem" x:Name="PickDataGrid">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="Champion" Width="150">
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate DataType="{x:Type local:PickItem}">
+                                        <ComboBox ItemsSource="{Binding Champions, ElementName=Window}"
+                                                  SelectedItem="{Binding ChampionName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <DockPanel>
+                                                        <Image
+                                                            Source="{Binding Converter={StaticResource ChampionToIconConverter}}"
+                                                            DockPanel.Dock="Left" MaxHeight="32" MaxWidth="32" />
+                                                        <Label Content="{Binding}" VerticalAlignment="Center" />
+                                                    </DockPanel>
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="{x:Type local:PickItem}">
+                                        <DockPanel>
+                                            <Image
+                                                Source="{Binding ChampionName, Converter={StaticResource ChampionToIconConverter}, FallbackValue={StaticResource AddIcon}}"
+                                                DockPanel.Dock="Left" MaxHeight="32" MaxWidth="32" />
+                                            <Label Content="{Binding ChampionName, FallbackValue='Add pick'}"
+                                                   VerticalAlignment="Center" />
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
 
-                    <DataGridTemplateColumn>
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate DataType="{x:Type local:PickItem}">
-                                <Button Visibility="{Binding ChampionName, Converter={StaticResource NullVisibilityConverter}, FallbackValue=Hidden}">
-                                    <Button.Content>
-                                        <Image Source="{StaticResource RemoveIcon}"/>
-                                    </Button.Content>
-                                </Button>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                </DataGrid.Columns>
+                            <DataGridTemplateColumn Header="Summoner spell 1" Width="100">
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate DataType="{x:Type local:PickItem}">
+                                        <ComboBox ItemsSource="{Binding SummonerSpells, ElementName=Window}"
+                                                  SelectedItem="{Binding SummonerSpell1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <DockPanel>
+                                                        <Image
+                                                            Source="{Binding Converter={StaticResource SummonerSpellToIconConverter}}"
+                                                            DockPanel.Dock="Left" MaxHeight="32" MaxWidth="32" />
+                                                        <Label Content="{Binding}" VerticalAlignment="Center" />
+                                                    </DockPanel>
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="{x:Type local:PickItem}">
+                                        <DockPanel>
+                                            <Image
+                                                Source="{Binding SummonerSpell1, Converter={StaticResource SummonerSpellToIconConverter}}"
+                                                DockPanel.Dock="Left" MaxHeight="32" MaxWidth="32" />
+                                            <Label Content="{Binding SummonerSpell1}" VerticalAlignment="Center" />
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
 
-            </DataGrid>
-            <ListView Grid.RowSpan="2" Visibility="Hidden">
+                            <DataGridTemplateColumn Header="Summoner spell 2" Width="100">
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate DataType="{x:Type local:PickItem}">
+                                        <ComboBox ItemsSource="{Binding SummonerSpells, ElementName=Window}"
+                                                  SelectedItem="{Binding SummonerSpell2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <DockPanel>
+                                                        <Image
+                                                            Source="{Binding Converter={StaticResource SummonerSpellToIconConverter}}"
+                                                            DockPanel.Dock="Left" MaxHeight="32" MaxWidth="32" />
+                                                        <Label Content="{Binding}" VerticalAlignment="Center" />
+                                                    </DockPanel>
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="{x:Type local:PickItem}">
+                                        <DockPanel>
+                                            <Image
+                                                Source="{Binding SummonerSpell2, Converter={StaticResource SummonerSpellToIconConverter}}"
+                                                DockPanel.Dock="Left" MaxHeight="32" MaxWidth="32" />
+                                            <Label Content="{Binding SummonerSpell2}" VerticalAlignment="Center" />
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            
+                            
+
+                            <DataGridTemplateColumn CellTemplate="{StaticResource UpTemplate}"/>
+                            <DataGridTemplateColumn CellTemplate="{StaticResource DownTemplate}"/>
+                            <DataGridTemplateColumn CellTemplate="{StaticResource RemoveTemplate}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                </Border>
+            </DockPanel>
+            <DockPanel Grid.RowSpan="2" Grid.Column="2">
+                <CheckBox IsChecked="{Binding EnableAutoBan}" x:Name="AutoBan" DockPanel.Dock="Top">
+                    <Label Content="Enable auto ban" />
+                </CheckBox>
+                <Border BorderBrush="Red"
+                        BorderThickness="{Binding IsChecked, ElementName=AutoBan, Converter={StaticResource BoolToThicknessConverter}}">
+
+                    <DataGrid AutoGenerateColumns="False" IsManipulationEnabled="True" CanUserResizeColumns="False" CanUserResizeRows="False" CanUserReorderColumns="False" 
+                              ItemsSource="{Binding Bans}"
+                              IsEnabled="{Binding IsChecked, ElementName=AutoBan}"
+                              AddingNewItem="Bans_AddingNewItem" x:Name="BanDataGrid">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="Champion" Width="150">
+                                <DataGridTemplateColumn.CellEditingTemplate>
+                                    <DataTemplate DataType="{x:Type local:BanItem}">
+                                        <ComboBox ItemsSource="{Binding Champions, ElementName=Window}"
+                                                  SelectedItem="{Binding ChampionName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <DockPanel>
+                                                        <Image
+                                                            Source="{Binding Converter={StaticResource ChampionToIconConverter}}"
+                                                            DockPanel.Dock="Left" MaxHeight="32" MaxWidth="32" />
+                                                        <Label Content="{Binding}" VerticalAlignment="Center" />
+                                                    </DockPanel>
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellEditingTemplate>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="{x:Type local:BanItem}">
+                                        <DockPanel>
+                                            <Image
+                                                Source="{Binding ChampionName, Converter={StaticResource ChampionToIconConverter}, FallbackValue={StaticResource AddRedIcon}}"
+                                                DockPanel.Dock="Left" MaxHeight="32" MaxWidth="32" />
+                                            <Label Content="{Binding ChampionName, FallbackValue='Add ban'}"
+                                                   VerticalAlignment="Center" />
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <DataGridTemplateColumn CellTemplate="{StaticResource UpTemplate}"/>
+                            <DataGridTemplateColumn CellTemplate="{StaticResource DownTemplate}"/>
+                            <DataGridTemplateColumn CellTemplate="{StaticResource RemoveTemplate}"/>
+                        </DataGrid.Columns>
+
+                    </DataGrid>
+
+                </Border>
+            </DockPanel>
+            <ListView Grid.RowSpan="2" Visibility="Hidden" Grid.ColumnSpan="3">
                 <ListViewItem>
                     <StackPanel Orientation="Horizontal">
                         <ComboBox Width="200" SelectedIndex="0" ItemsSource="{Binding Champions, ElementName=Window}">
                             <ComboBox.ItemTemplate>
-                                <DataTemplate >
+                                <DataTemplate>
                                     <DockPanel>
                                         <Image Source="{Binding Converter={StaticResource ChampionToIconConverter}}"
                                                DockPanel.Dock="Left" MaxHeight="32" MaxWidth="32" />
@@ -141,10 +247,11 @@
                         </ComboBox>
                         <ComboBox SelectedIndex="0" ItemsSource="{Binding SummonerSpells, ElementName=Window}">
                             <ComboBox.ItemTemplate>
-                                <DataTemplate >
+                                <DataTemplate>
                                     <DockPanel>
-                                        <Image Source="{Binding Converter={StaticResource SummonerSpellToIconConverter}}"
-                                               DockPanel.Dock="Left" MaxHeight="32" MaxWidth="32" />
+                                        <Image
+                                            Source="{Binding Converter={StaticResource SummonerSpellToIconConverter}}"
+                                            DockPanel.Dock="Left" MaxHeight="32" MaxWidth="32" />
                                         <Label Content="{Binding}" VerticalAlignment="Center" />
                                     </DockPanel>
                                 </DataTemplate>
@@ -154,17 +261,17 @@
                         <ComboBox />
                         <Button>
                             <Button.Content>
-                                <Image Source="{StaticResource ArrowUp}"/>
+                                <Image Source="{StaticResource ArrowUp}" />
                             </Button.Content>
                         </Button>
                         <Button>
                             <Button.Content>
-                                <Image Source="{StaticResource ArrowDown}"/>
+                                <Image Source="{StaticResource ArrowDown}" />
                             </Button.Content>
                         </Button>
                         <Button>
                             <Button.Content>
-                                <Image Source="{StaticResource RemoveIcon}"/>
+                                <Image Source="{StaticResource RemoveIcon}" />
                             </Button.Content>
                         </Button>
                     </StackPanel>
