@@ -85,6 +85,11 @@
     <Compile Include="ProgramContextMenu.cs" />
     <Compile Include="ProgramUtility.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
     <Compile Include="Samples.cs" />
     <Compile Include="SearchMatchingSizeForm.cs">
       <SubType>Form</SubType>
@@ -114,6 +119,10 @@
     </EmbeddedResource>
     <EmbeddedResource Include="PatterCaptureForm.resx">
       <DependentUpon>PatterCaptureForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="SearchMatchingSizeForm.resx">
       <DependentUpon>SearchMatchingSizeForm.cs</DependentUpon>
@@ -285,6 +294,31 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <Resource Include="Icons\action_add_32xLG.png" />
+    <Content Include="Icons\AddMark_10580_32.bmp" />
+    <Content Include="Icons\Symbols_Equals_32xLG.png" />
+    <EmbeddedResource Include="Samples\SummonerSpells\11_ImagePack_spells_Embeds__e_Spell_SummonerPoroThrow.png" />
+    <EmbeddedResource Include="Samples\SummonerSpells\14_ImagePack_spells_Embeds__e_Spell_SummonerOdinGarrison.png" />
+    <EmbeddedResource Include="Samples\SummonerSpells\17_ImagePack_spells_Embeds__e_Spell_SummonerBarrier.png" />
+    <EmbeddedResource Include="Samples\SummonerSpells\20_ImagePack_spells_Embeds__e_Spell_SummonerFlash.png" />
+    <EmbeddedResource Include="Samples\SummonerSpells\22_ImagePack_spells_Embeds__e_Spell_SummonerMana.png" />
+    <EmbeddedResource Include="Samples\SummonerSpells\25_ImagePack_spells_Embeds__e_Spell_SummonerTeleport.png" />
+    <EmbeddedResource Include="Samples\SummonerSpells\26_ImagePack_spells_Embeds__e_Spell_SummonerExhaust.png" />
+    <EmbeddedResource Include="Samples\SummonerSpells\28_ImagePack_spells_Embeds__e_Spell_SummonerClairvoyance.png" />
+    <EmbeddedResource Include="Samples\SummonerSpells\29_ImagePack_spells_Embeds__e_Spell_SummonerRevive.png" />
+    <EmbeddedResource Include="Samples\SummonerSpells\30_ImagePack_spells_Embeds__e_Spell_SummonerSnowball.png" />
+    <EmbeddedResource Include="Samples\SummonerSpells\33_ImagePack_spells_Embeds__e_Spell_SummonerDot.png" />
+    <EmbeddedResource Include="Samples\SummonerSpells\37_ImagePack_spells_Embeds__e_Spell_SummonerSmite.png" />
+    <EmbeddedResource Include="Samples\SummonerSpells\3_ImagePack_spells_Embeds__e_Spell_SummonerHeal.png" />
+    <EmbeddedResource Include="Samples\SummonerSpells\41_ImagePack_spells_Embeds__e_Spell_SummonerHaste.png" />
+    <EmbeddedResource Include="Samples\SummonerSpells\45_ImagePack_spells_Embeds__e_Spell_SummonerPoroRecall.png" />
+    <EmbeddedResource Include="Samples\SummonerSpells\6_ImagePack_spells_Embeds__e_Spell_SummonerBoost.png" />
+    <Resource Include="Icons\arrow_Down_16xLG.png" />
+    <Resource Include="Icons\arrow_Up_16xLG.png" />
+    <Resource Include="Icons\Symbols_Critical_32xLG.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

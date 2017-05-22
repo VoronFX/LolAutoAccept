@@ -102,7 +102,9 @@ namespace LolAutoAccept
 					//	program.autoPickForm.BringToFront();
 					//}
 				});
-
+#if DEBUG
+				AutoPick.PerformClick();
+#endif
 				var rkApp = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
 
 				string currentRegValue = (string)rkApp?.GetValue(nameof(LolAutoAccept));

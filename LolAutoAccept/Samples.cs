@@ -17,6 +17,9 @@ namespace LolAutoAccept
 		private static readonly string ChampionSamplesFolderPath
 			= string.Join(@".", nameof(LolAutoAccept), "Samples", "Champions") + ".";
 
+		private static readonly string SummonerSpellsSamplesFolderPath
+			= string.Join(@".", nameof(LolAutoAccept), "Samples", "SummonerSpells") + ".";
+
 		public static Bitmap AcceptMatchButton => GetSample("AcceptMatchButton.png");
 		public static Bitmap AcceptMatchButtonHover => GetSample("AcceptMatchButtonHover.png");
 
@@ -47,13 +50,19 @@ namespace LolAutoAccept
 				.Select(x => Regex.Match(x,
 					$@"(?si){ChampionSamplesFolderPath.Replace(".", @"\.")}(?<fullname>(?<name>\w+)_Square_0\.png)"))
 				.Where(m => m.Success)
-				.Select(m => (m.Groups["name"].Value, GetChampionSample(m.Groups["fullname"].Value)));
+				.Select(m => (m.Groups["name"].Value, LoadSample(ChampionSamplesFolderPath + m.Groups["fullname"].Value)));
+
+		public static IEnumerable<(string Name, Bitmap Sample)> SummonerSpells
+			=> Assembly
+				.GetExecutingAssembly()
+				.GetManifestResourceNames()
+				.Select(x => Regex.Match(x,
+					$@"(?si){SummonerSpellsSamplesFolderPath.Replace(".", @"\.")}(?<fullname>.*?Spell_Summoner(?<name>\w+)\.png)"))
+				.Where(m => m.Success)
+				.Select(m => (m.Groups["name"].Value, LoadSample(SummonerSpellsSamplesFolderPath + m.Groups["fullname"].Value)));
 
 		private static Bitmap GetSample(string name)
 			=> LoadSample(SamplesFolderPath + name);
-
-		private static Bitmap GetChampionSample(string name)
-			=> LoadSample(ChampionSamplesFolderPath + name);
 
 		private static Bitmap LoadSample(string resName)
 		{
